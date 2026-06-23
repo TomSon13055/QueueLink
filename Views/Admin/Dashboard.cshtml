@@ -1,0 +1,104 @@
+@model QueueLink.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-0"><i class="bi bi-speedometer2 text-primary me-2"></i>Admin Dashboard</h2>
+        <p class="text-muted">Tổng quan hệ thống QueueLink</p>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4 col-lg-2">
+            <div class="card text-center border-0 shadow-sm bg-primary text-white">
+                <div class="card-body py-3">
+                    <div class="small text-uppercase opacity-75">Tổng hôm nay</div>
+                    <div class="display-5 fw-bold">@Model.TotalTicketsToday</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <div class="card text-center border-0 shadow-sm bg-warning text-dark">
+                <div class="card-body py-3">
+                    <div class="small text-uppercase opacity-75">Đang chờ</div>
+                    <div class="display-5 fw-bold">@Model.WaitingTickets</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <div class="card text-center border-0 shadow-sm bg-success text-white">
+                <div class="card-body py-3">
+                    <div class="small text-uppercase opacity-75">Hoàn tất</div>
+                    <div class="display-5 fw-bold">@Model.CompletedTickets</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <div class="card text-center border-0 shadow-sm bg-secondary text-white">
+                <div class="card-body py-3">
+                    <div class="small text-uppercase opacity-75">Vắng mặt</div>
+                    <div class="display-5 fw-bold">@Model.NoShowTickets</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <div class="card text-center border-0 shadow-sm bg-danger text-white">
+                <div class="card-body py-3">
+                    <div class="small text-uppercase opacity-75">Đã hủy</div>
+                    <div class="display-5 fw-bold">@Model.CancelledTickets</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-2">
+            <div class="card text-center border-0 shadow-sm bg-info text-white">
+                <div class="card-body py-3">
+                    <div class="small text-uppercase opacity-75">Chờ TB</div>
+                    <div class="display-5 fw-bold">@Model.AverageEstimatedWaitMinutes phút</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick nav -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-geo-alt-fill text-primary fs-1 mb-3"></i>
+                    <h5 class="fw-bold">Địa điểm</h5>
+                    <p class="text-muted small">@Model.TotalVenues địa điểm đang hoạt động</p>
+                    <a asp-controller="Venue" asp-action="Index" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Quản lý địa điểm
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-list-ul text-success fs-1 mb-3"></i>
+                    <h5 class="fw-bold">Hàng chờ</h5>
+                    <p class="text-muted small">@Model.TotalQueueServices hàng chờ &bull; @Model.OpenQueues đang mở</p>
+                    <a asp-controller="QueueService" asp-action="Index" class="btn btn-outline-success">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Quản lý hàng chờ
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow h-100">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-person-badge text-warning fs-1 mb-3"></i>
+                    <h5 class="fw-bold">Staff</h5>
+                    <p class="text-muted small">Quản lý nhân viên và quyền truy cập</p>
+                    <a asp-controller="StaffQueue" asp-action="Index" class="btn btn-outline-warning">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Staff Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

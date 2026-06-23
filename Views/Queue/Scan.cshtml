@@ -1,0 +1,256 @@
+@{
+    ViewData["Title"] = "Quét QR";
+    Layout = "_Layout";
+}
+
+@section Head {
+    <style>
+        #qr-reader {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        #qr-reader video {
+            border-radius: 16px;
+        }
+
+        .scan-container {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .scan-instruction {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .manual-link {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #0d6efd;
+        }
+
+        .manual-link:hover {
+            color: #0a58ca;
+        }
+
+        #manual-entry {
+            display: none;
+        }
+
+        .qr-illustration {
+            width: 120px;
+            height: 120px;
+            background: #e9f0ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .qr-illustration i {
+            font-size: 3.5rem;
+            color: #0d6efd;
+        }
+    </style>
+}
+
+<div class="container py-5">
+    <div class="scan-container">
+
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="fw-bold">
+                <i class="bi bi-qr-code-scan text-primary me-2"></i>Quét QR để lấy số
+            </h1>
+            <p class="text-muted">Quét mã QR được dán tại quầy hoặc quảng cáo</p>
+        </div>
+
+        <!-- Error -->
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger text-center">@TempData["Error"]</div>
+        }
+
+        <!-- Camera Scanner -->
+        <div class="card shadow-sm mb-4" id="scanner-card">
+            <div class="card-body p-4">
+                <div id="qr-reader"></div>
+                <div id="qr-reader-no-dashboard" class="d-none text-center p-4">
+                    <div class="qr-illustration">
+                        <i class="bi bi-camera"></i>
+                    </div>
+                    <p class="mb-1 fw-semibold">Camera không khả dụng</p>
+                    <p class="scan-instruction">Trình duyệt không cho phép truy cập camera.<br />Vui lòng nhập link QR thủ công bên dưới.</p>
+                    <button class="btn btn-link p-0" onclick="showManualEntry()">Nhập link thủ công</button>
+                </div>
+                <div id="qr-reader-status" class="text-center mt-3 text-muted small">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Đang khởi tạo camera...
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Entry (hidden by default) -->
+        <div class="card shadow-sm mb-4" id="manual-entry">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-keyboard me-2"></i>Nhập link thủ công</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="showScanner()">
+                        <i class="bi bi-camera me-1"></i>Quay lại quét QR
+                    </button>
+                </div>
+                <form asp-action="ProcessQRCode" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Dán link hoặc ID hàng chờ</label>
+                        <input type="text" name="qrUrl" class="form-control"
+                               placeholder="https://queuelink.com/Queue/Join/5  hoặc  /Queue/Join/5  hoặc  5"
+                               required />
+                        <div class="form-text">
+                            Dán toàn bộ URL từ mã QR, hoặc chỉ cần ID hàng chờ (ví dụ: 5)
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-arrow-right-circle me-2"></i>Tiếp tục
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="text-center mb-4">
+            <span class="scan-instruction">
+                Hoặc <span class="manual-link" onclick="showManualEntry()">nhập link thủ công</span>
+            </span>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card bg-light border-0">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Hướng dẫn</h5>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="badge bg-primary rounded-circle flex-shrink-0" style="width:28px;height:28px;line-height:20px;">1</span>
+                            <p class="mb-0 small">Mở ứng dụng camera trên điện thoại và quét mã QR được dán tại quầy</p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="badge bg-primary rounded-circle flex-shrink-0" style="width:28px;height:28px;line-height:20px;">2</span>
+                            <p class="mb-0 small">Điền thông tin (tên, số điện thoại, số người) để nhận số thứ tự</p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="badge bg-primary rounded-circle flex-shrink-0" style="width:28px;height:28px;line-height:20px;">3</span>
+                            <p class="mb-0 small">Theo dõi số thứ tự realtime, biết chính xác khi nào đến lượt mà không cần đứng đợi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Browse queues link -->
+        <div class="text-center mt-4">
+            <a asp-controller="Queue" asp-action="Index" class="text-muted small">
+                <i class="bi bi-list-ul me-1"></i>Hoặc duyệt danh sách hàng chờ
+            </a>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        let html5QrCode;
+
+        function onScanSuccess(decodedText) {
+            // Stop scanner
+            if (html5QrCode) {
+                html5QrCode.stop().then(function () {
+                    // Submit the decoded URL
+                    var form = document.createElement("form");
+                    form.method = "POST";
+                    form.action = "@Url.Action("ProcessQRCode", "Queue")";
+
+                    var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "qrUrl";
+                    input.value = decodedText;
+                    form.appendChild(input);
+
+                    // Add antiforgery token if available
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (token) {
+                        var tokenInput = token.cloneNode();
+                        form.appendChild(tokenInput);
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }).catch(function (err) {
+                    // Fallback: redirect directly
+                    window.location.href = "@Url.Action("ProcessQRCode", "Queue")?qrUrl=" + encodeURIComponent(decodedText);
+                });
+            } else {
+                window.location.href = "@Url.Action("ProcessQRCode", "Queue")?qrUrl=" + encodeURIComponent(decodedText);
+            }
+        }
+
+        function onScanFailure(error) {
+            // Silently ignore scan failures (no QR in frame)
+        }
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("qr-reader");
+
+            var config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(function () {
+                document.getElementById("qr-reader-status").innerHTML =
+                    '<i class="bi bi-check-circle text-success me-1"></i>Camera đang hoạt động — Đưa mã QR vào khung';
+            }).catch(function (err) {
+                console.warn("Camera error:", err);
+                document.getElementById("qr-reader").classList.add("d-none");
+                document.getElementById("qr-reader-no-dashboard").classList.remove("d-none");
+                document.getElementById("qr-reader-status").textContent = "";
+            });
+        }
+
+        function showManualEntry() {
+            document.getElementById("scanner-card").classList.add("d-none");
+            document.getElementById("manual-entry").style.display = "block";
+            if (html5QrCode) {
+                html5QrCode.stop().catch(function () {});
+            }
+        }
+
+        function showScanner() {
+            document.getElementById("scanner-card").classList.remove("d-none");
+            document.getElementById("manual-entry").style.display = "none";
+            document.getElementById("qr-reader-status").innerHTML =
+                '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Đang khởi tạo camera...';
+            startScanner();
+        }
+
+        // Auto-start camera on page load
+        document.addEventListener("DOMContentLoaded", function () {
+            startScanner();
+        });
+    </script>
+}

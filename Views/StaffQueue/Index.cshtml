@@ -1,0 +1,60 @@
+@model IEnumerable<QueueLink.ViewModels.StaffQueueListItemViewModel>
+@{
+    ViewData["Title"] = "Staff Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="bi bi-display me-2 text-primary"></i>Staff Dashboard</h2>
+            <p class="text-muted mb-0">Chọn hàng chờ để quản lý</p>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <h5>Không có hàng chờ nào</h5>
+            <p class="text-muted">Liên hệ Admin để thêm hàng chờ.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : "bg-secondary")">
+                                    @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Open" : "Closed")
+                                </span>
+                            </div>
+                            <h5 class="fw-bold">@item.QueueServiceName</h5>
+                            <p class="text-muted small mb-2"><i class="bi bi-geo-alt me-1"></i>@item.VenueName</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-primary rounded-pill">
+                                    <i class="bi bi-people me-1"></i>@item.WaitingCount đang chờ
+                                </span>
+                                @if (!string.IsNullOrEmpty(item.CurrentCallingTicketCode))
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-bell me-1"></i>@item.CurrentCallingTicketCode
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0">
+                            <a asp-action="Details" asp-route-queueServiceId="@item.QueueServiceId" class="btn btn-primary w-100">
+                                <i class="bi bi-gear me-2"></i>Quản lý
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

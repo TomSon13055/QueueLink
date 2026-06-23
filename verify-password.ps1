@@ -1,0 +1,5 @@
+$p = "jbahvsvcbghtzcvh"
+Write-Host "Password length: $($p.Length)"
+Write-Host "Chars: $($p.ToCharArray() -join '|')"
+Write-Host "Starts with 'jbah': $($p.StartsWith('jbah'))"
+Write-Host "Ends with 'zcvh': $($p.EndsWith('zcvh'))"

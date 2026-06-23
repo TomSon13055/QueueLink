@@ -1,0 +1,62 @@
+@model QueueLink.ViewModels.JoinQueueViewModel
+@{
+    ViewData["Title"] = "Lấy số thứ tự";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-ticket-perforated me-2"></i>Lấy số thứ tự</h4>
+                </div>
+                <div class="card-body p-4">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-shop me-2"></i>
+                        <strong>@Model.VenueName</strong> &mdash; @Model.QueueServiceName
+                    </div>
+
+                    <form asp-action="Join" method="post" novalidate>
+                        <input type="hidden" asp-for="QueueServiceId" />
+
+                        <div class="mb-3">
+                            <label asp-for="CustomerName" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerName" class="form-control form-control-lg" placeholder="Nhập họ và tên của bạn" autocomplete="name" />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CustomerPhone" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerPhone" class="form-control form-control-lg" placeholder="0xxxxxxxxx" type="tel" autocomplete="tel" />
+                            <span asp-validation-for="CustomerPhone" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="PartySize" class="form-label fw-semibold"></label>
+                            <input asp-for="PartySize" class="form-control form-control-lg" type="number" min="1" max="20" value="1" />
+                            <span asp-validation-for="PartySize" class="text-danger small"></span>
+                            <div class="form-text">Số lượng khách đi cùng (tối đa 20)</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold">
+                            <i class="bi bi-check2-circle me-2"></i>Nhận số thứ tự
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <a asp-action="Index" class="text-muted small"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

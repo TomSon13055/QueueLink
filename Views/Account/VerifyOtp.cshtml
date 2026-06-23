@@ -1,0 +1,63 @@
+@model QueueLink.ViewModels.VerifyOtpViewModel
+@{
+    ViewData["Title"] = "Xác thực OTP";
+    Layout = "_Layout";
+    var email = Model.Email ?? "";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark text-center py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2"></i>Xác thực email</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3">
+                        Mã OTP đã được gửi tới <strong>@email</strong>.<br />
+                        Vui lòng nhập mã 6 chữ số (có hiệu lực 5 phút).
+                    </p>
+
+                    @if (ViewData.ModelState.ErrorCount > 0)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <p class="mb-0">@err.ErrorMessage</p>
+                            }
+                        </div>
+                    }
+
+                    <form asp-action="VerifyOtp" method="post">
+                        <input type="hidden" asp-for="Email" />
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label fw-semibold">Mã OTP</label>
+                            <input asp-for="Code" class="form-control form-control-lg text-center fw-bold"
+                                   style="letter-spacing: 8px; font-size: 28px;"
+                                   maxlength="6"
+                                   inputmode="numeric"
+                                   pattern="\d{6}"
+                                   placeholder="000000" autofocus />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold">
+                            <i class="bi bi-check2-circle me-2"></i>Xác nhận
+                        </button>
+                    </form>
+
+                    <hr class="my-4" />
+                    <form asp-action="ResendOtp" method="post" class="text-center">
+                        <input type="hidden" name="email" value="@email" />
+                        <button type="submit" class="btn btn-link p-0 small">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Không nhận được? Gửi lại mã
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

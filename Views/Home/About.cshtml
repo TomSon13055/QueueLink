@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Giới thiệu";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="fw-bold mb-4"><i class="bi bi-info-circle text-primary me-2"></i>Giới thiệu QueueLink</h1>
+            <hr />
+            <h4 class="mt-4">QueueLink là gì?</h4>
+            <p class="lead">QueueLink là nền tảng Web App giúp khách hàng lấy số thứ tự trực tuyến và theo dõi hàng chờ theo thời gian thực tại các địa điểm dịch vụ đông khách.</p>
+
+            <h4 class="mt-4">Tính năng chính</h4>
+            <ul class="list-group list-group-flush mb-4">
+                <li class="list-group-item"><i class="bi bi-check-circle text-success me-2"></i>Không cần tải app &mdash; quét QR là dùng ngay</li>
+                <li class="list-group-item"><i class="bi bi-check-circle text-success me-2"></i>Theo dõi realtime số người chờ phía trước</li>
+                <li class="list-group-item"><i class="bi bi-check-circle text-success me-2"></i>Thông báo khi được gọi số</li>
+                <li class="list-group-item"><i class="bi bi-check-circle text-success me-2"></i>Ước tính thời gian chờ thông minh</li>
+                <li class="list-group-item"><i class="bi bi-check-circle text-success me-2"></i>Staff gọi số nhanh chóng qua dashboard</li>
+                <li class="list-group-item"><i class="bi bi-check-circle text-success me-2"></i>Admin quản lý địa điểm và xem thống kê</li>
+            </ul>
+
+            <h4 class="mt-4">Phù hợp với</h4>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-3 p-3 bg-light rounded">
+                        <i class="bi bi-shop text-primary fs-3"></i>
+                        <div>
+                            <strong>Nhà hàng buffet</strong>
+                            <p class="mb-0 text-muted small">Giảm chen chúc tại khu vực chờ bàn</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-3 p-3 bg-light rounded">
+                        <i class="bi bi-camera text-warning fs-3"></i>
+                        <div>
+                            <strong>Photobooth / Khu vui chơi</strong>
+                            <p class="mb-0 text-muted small">Khách đi chơi, nhận số và quay lại đúng giờ</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-3 p-3 bg-light rounded">
+                        <i class="bi bi-bag text-success fs-3"></i>
+                        <div>
+                            <strong>Food court / Take-away</strong>
+                            <p class="mb-0 text-muted small">Lấy số và nhận đồ ăn không cần xếp hàng</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-3 p-3 bg-light rounded">
+                        <i class="bi bi-hospital text-danger fs-3"></i>
+                        <div>
+                            <strong>Phòng khám / Ngân hàng</strong>
+                            <p class="mb-0 text-muted small">Quản lý hàng chờ thông minh cho dịch vụ công</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-geo-alt me-2"></i>
+                <strong>GPS anti-spam</strong> sẽ được triển khai sau. Hiện tại chỉ yêu cầu tên và số điện thoại.
+            </div>
+            <div class="alert alert-info mt-2">
+                <i class="bi bi-credit-card me-2"></i>
+                <strong>POS integration</strong> sẽ được triển khai sau. Hiện tại miễn phí sử dụng.
+            </div>
+
+            <div class="text-center mt-5">
+                <a asp-controller="Queue" asp-action="Index" class="btn btn-primary btn-lg">
+                    <i class="bi bi-qr-code-scan me-2"></i>Dùng thử ngay
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

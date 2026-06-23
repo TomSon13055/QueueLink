@@ -1,0 +1,75 @@
+@model QueueLink.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-person-plus me-2"></i>Tạo tài khoản khách hàng</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Sau khi đăng ký, một mã OTP sẽ được gửi tới email để xác thực.
+                    </p>
+
+                    @if (ViewData.ModelState.ErrorCount > 0)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <p class="mb-0">@err.ErrorMessage</p>
+                            }
+                        </div>
+                    }
+
+                    <form asp-action="Register" method="post">
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label fw-semibold"></label>
+                            <input asp-for="FullName" class="form-control form-control-lg" autocomplete="name" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" type="email" class="form-control form-control-lg" autocomplete="email" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Phone" class="form-label fw-semibold"></label>
+                            <input asp-for="Phone" type="tel" class="form-control form-control-lg" autocomplete="tel" placeholder="0xxxxxxxxx" />
+                            <span asp-validation-for="Phone" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" type="password" class="form-control form-control-lg" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                            <div class="form-text">Tối thiểu 6 ký tự.</div>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control form-control-lg" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">
+                            <i class="bi bi-envelope-paper me-2"></i>Đăng ký & gửi OTP
+                        </button>
+                    </form>
+
+                    <hr class="my-4" />
+                    <p class="text-center small mb-0">
+                        Đã có tài khoản?
+                        <a asp-action="Login" class="fw-semibold">Đăng nhập</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

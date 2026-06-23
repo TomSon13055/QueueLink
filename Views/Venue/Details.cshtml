@@ -1,0 +1,88 @@
+@model QueueLink.ViewModels.VenueDetailsViewModel
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-geo-alt text-primary me-2"></i>@Model.Name</h2>
+            <p class="text-muted mb-0">@Model.Address &bull; @Model.Phone</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Sửa</a>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Thông tin địa điểm</h5>
+                    <dl class="mb-0">
+                        <dt>Mô tả</dt>
+                        <dd>@(Model.Description ?? "-")</dd>
+                        <dt>Địa chỉ</dt>
+                        <dd>@Model.Address</dd>
+                        <dt>Điện thoại</dt>
+                        <dd>@(Model.Phone ?? "-")</dd>
+                        <dt>Trạng thái</dt>
+                        <dd>
+                            <span class="badge @(Model.IsActive ? "bg-success" : "bg-secondary")">
+                                @(Model.IsActive ? "Hoạt động" : "Tắt")
+                            </span>
+                        </dd>
+                        <dt>Ngày tạo</dt>
+                        <dd>@Model.CreatedAt.ToString("dd/MM/yyyy")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Hàng chờ (@Model.QueueServices.Count)</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tên</th>
+                                <th>Prefix</th>
+                                <th>Trạng thái</th>
+                                <th>Đang chờ</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var qs in Model.QueueServices)
+                            {
+                                <tr>
+                                    <td>@qs.QueueServiceName</td>
+                                    <td>@(qs.Description ?? "-")</td>
+                                    <td>
+                                        <span class="badge @(qs.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : qs.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary")">
+                                            @(qs.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Open" : qs.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "Paused" : "Closed")
+                                        </span>
+                                    </td>
+                                    <td>@qs.WaitingCount</td>
+                                    <td>
+                                        <a asp-controller="QueueService" asp-action="Details" asp-route-id="@qs.QueueServiceId" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.QueueServices.Any())
+                            {
+                                <tr><td colspan="5" class="text-center text-muted py-3">Chưa có hàng chờ nào.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

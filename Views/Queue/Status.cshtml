@@ -1,0 +1,144 @@
+@model QueueLink.ViewModels.TicketStatusViewModel
+@{
+    ViewData["Title"] = "Trạng thái ticket #" + Model.TicketCode;
+    Layout = "_Layout";
+}
+
+<div class="container py-4" style="max-width: 540px;">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- Ticket Card -->
+    <div class="card shadow-lg border-0 mb-4 overflow-hidden ticket-card">
+        <div class="ticket-header text-white text-center py-4 px-3">
+            <div class="mb-2">
+                <i class="bi bi-qr-code-scan fs-1 opacity-75"></i>
+            </div>
+            <p class="mb-1 small opacity-75 text-uppercase tracking-wide">Số thứ tự của bạn</p>
+            <h1 class="display-1 fw-bold mb-0 ticket-code-number" id="ticketCode">@Model.TicketCode</h1>
+            <p class="mb-0 mt-2"><strong>@Model.QueueServiceName</strong></p>
+            <p class="mb-0 small opacity-75">@Model.VenueName</p>
+        </div>
+
+        <div class="card-body p-4">
+            <!-- Status -->
+            <div class="text-center mb-4">
+                <span id="statusBadge" class="badge px-4 py-2 fs-6 @(GetStatusBadgeClass(Model.Status))">
+                    <span id="statusText">@Model.StatusText</span>
+                </span>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <div class="small text-muted text-uppercase">Khách hàng</div>
+                        <div class="fw-semibold" id="customerName">@Model.CustomerName</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <div class="small text-muted text-uppercase">Số người đi cùng</div>
+                        <div class="fw-semibold">@Model.PartySize người</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            @if (Model.Status == QueueLink.Models.TicketStatus.Waiting || Model.Status == QueueLink.Models.TicketStatus.Called)
+            {
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 bg-warning bg-opacity-10 rounded text-center border border-warning">
+                            <div class="small text-muted text-uppercase">Phía trước</div>
+                            <div class="fw-bold fs-4 text-warning" id="peopleAhead">@Model.PeopleAhead người</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-info bg-opacity-10 rounded text-center border border-info">
+                            <div class="small text-muted text-uppercase">Chờ ước tính</div>
+                            <div class="fw-bold fs-4 text-info" id="estimatedWait">~@Model.EstimatedWaitMinutes phút</div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Currently Calling -->
+            @if (!string.IsNullOrEmpty(Model.CurrentCallingTicketCode))
+            {
+                <div class="alert alert-warning text-center mb-4 py-3">
+                    <div class="small text-uppercase text-muted">Đang gọi số</div>
+                    <div class="fw-bold fs-3">@Model.CurrentCallingTicketCode</div>
+                </div>
+            }
+
+            <!-- Message -->
+            <div id="statusMessageBox" class="alert @(GetMessageAlertClass(Model.Status)) text-center py-3">
+                <i class="@(GetMessageIcon(Model.Status)) me-2 fs-5"></i>
+                <span id="statusMessage">@Model.Message</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-grid gap-2 mt-3">
+                <a asp-controller="Queue" asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-center text-muted small mb-4">
+        <i class="bi bi-info-circle me-1"></i>
+        Trang này tự động cập nhật khi Staff gọi số hoặc thay đổi trạng thái.
+    </p>
+</div>
+
+@functions {
+    string GetStatusBadgeClass(QueueLink.Models.TicketStatus status) => status switch
+    {
+        QueueLink.Models.TicketStatus.Waiting => "bg-primary",
+        QueueLink.Models.TicketStatus.Called => "bg-warning text-dark",
+        QueueLink.Models.TicketStatus.Serving => "bg-info",
+        QueueLink.Models.TicketStatus.Completed => "bg-success",
+        QueueLink.Models.TicketStatus.NoShow => "bg-secondary",
+        QueueLink.Models.TicketStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    string GetMessageAlertClass(QueueLink.Models.TicketStatus status) => status switch
+    {
+        QueueLink.Models.TicketStatus.Waiting => "alert-primary",
+        QueueLink.Models.TicketStatus.Called => "alert-warning",
+        QueueLink.Models.TicketStatus.Serving => "alert-info",
+        QueueLink.Models.TicketStatus.Completed => "alert-success",
+        QueueLink.Models.TicketStatus.NoShow => "alert-secondary",
+        QueueLink.Models.TicketStatus.Cancelled => "alert-danger",
+        _ => "alert-secondary"
+    };
+
+    string GetMessageIcon(QueueLink.Models.TicketStatus status) => status switch
+    {
+        QueueLink.Models.TicketStatus.Waiting => "bi bi-hourglass-split",
+        QueueLink.Models.TicketStatus.Called => "bi bi-bell-fill",
+        QueueLink.Models.TicketStatus.Serving => "bi bi-person-check-fill",
+        QueueLink.Models.TicketStatus.Completed => "bi bi-check-circle-fill",
+        QueueLink.Models.TicketStatus.NoShow => "bi bi-person-x-fill",
+        QueueLink.Models.TicketStatus.Cancelled => "bi bi-x-circle-fill",
+        _ => "bi bi-info-circle"
+    };
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/queue-realtime.js"></script>
+    <script>
+        window.queueLinkConfig = {
+            queueServiceId: @Model.QueueServiceId,
+            publicToken: '@Model.PublicToken',
+            ticketId: @Model.TicketId,
+            isCustomer: true
+        };
+    </script>
+}

@@ -1,0 +1,141 @@
+@model IEnumerable<QueueLink.ViewModels.QueueCardViewModel>
+@{
+    ViewData["Title"] = "Tìm hàng chờ";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold"><i class="bi bi-search text-primary me-2"></i>Tìm hàng chờ</h1>
+        <p class="text-muted fs-5">Chọn hàng chờ phù hợp để nhận số thứ tự</p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- Search bar -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-8">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control border-start-0 border-end-0"
+                       placeholder="Tìm theo tên hàng chờ hoặc địa điểm..."
+                       autocomplete="off" autofocus />
+                <a asp-controller="Queue" asp-action="Scan" class="btn btn-outline-primary input-group-text border-start-0">
+                    <i class="bi bi-qr-code-scan me-1"></i>Quét QR
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <h5>Không có hàng chờ nào đang mở</h5>
+            <p class="text-muted">Vui lòng quay lại sau.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4" id="queueList">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4 queue-item"
+                     data-name="@item.QueueServiceName.ToLower()"
+                     data-venue="@item.VenueName.ToLower()">
+                    <div class="card h-100 shadow-sm queue-card @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "" : "border-secondary")">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary")">
+                                    @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Mở" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "Tạm dừng" : "Đóng")
+                                </span>
+                                <span class="text-muted small"><i class="bi bi-geo-alt me-1"></i>@item.VenueName</span>
+                            </div>
+
+                            <h5 class="card-title fw-bold mb-1">@item.QueueServiceName</h5>
+                            <p class="card-text text-muted small mb-3">@(item.Description ?? "Không có mô tả")</p>
+
+                            <div class="mt-auto">
+                                @if (item.QueueStatus == QueueLink.Models.QueueStatus.Open)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="badge bg-primary rounded-pill">
+                                            <i class="bi bi-people me-1"></i>@item.WaitingCount đang chờ
+                                        </span>
+                                        @if (item.WaitingCount > 0)
+                                        {
+                                            <span class="small text-muted">
+                                                <i class="bi bi-clock me-1"></i>~@item.EstimatedWaitMinutes phút
+                                            </span>
+                                        }
+                                    </div>
+                                    <a asp-controller="Queue" asp-action="Join" asp-route-id="@item.QueueServiceId" class="btn btn-primary w-100">
+                                        <i class="bi bi-ticket-perforated me-2"></i>Lấy số
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-secondary w-100" disabled>
+                                        <i class="bi bi-x-circle me-2"></i>Không khả dụng
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div id="noResults" class="text-center py-5" style="display:none;">
+            <i class="bi bi-search text-muted fs-1 d-block mb-3"></i>
+            <h5 class="text-muted">Không tìm thấy hàng chờ phù hợp</h5>
+            <p class="text-muted small">Thử từ khóa khác hoặc <a asp-controller="Queue" asp-action="Scan">quét QR</a></p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var input = document.getElementById("searchInput");
+            var items = document.querySelectorAll(".queue-item");
+            var noResults = document.getElementById("noResults");
+            var totalItems = items.length;
+
+            input.addEventListener("input", function () {
+                var query = this.value.toLowerCase().trim();
+                var visibleCount = 0;
+
+                items.forEach(function (item) {
+                    var name = item.getAttribute("data-name") || "";
+                    var venue = item.getAttribute("data-venue") || "";
+                    var match = query === "" || name.includes(query) || venue.includes(query);
+
+                    if (match) {
+                        item.style.display = "";
+                        visibleCount++;
+                    } else {
+                        item.style.display = "none";
+                    }
+                });
+
+                if (noResults) {
+                    noResults.style.display = visibleCount === 0 ? "block" : "none";
+                }
+            });
+
+            // Also filter on page load if query param exists
+            var urlParams = new URLSearchParams(window.location.search);
+            var q = urlParams.get("q");
+            if (q) {
+                input.value = q;
+                input.dispatchEvent(new Event("input"));
+            }
+        });
+    </script>
+}

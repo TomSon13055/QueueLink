@@ -1,0 +1,61 @@
+@model IEnumerable<QueueLink.ViewModels.QueueServiceDetailsViewModel>
+@{
+    ViewData["Title"] = "Quản lý Hàng chờ";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="bi bi-list-ul text-primary me-2"></i>Quản lý Hàng chờ</h2>
+        </div>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Thêm hàng chờ</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="card shadow-sm">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Tên hàng chờ</th>
+                    <th>Địa điểm</th>
+                    <th>Prefix</th>
+                    <th>Trạng thái</th>
+                    <th>Đang chờ</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var q in Model)
+                {
+                    <tr>
+                        <td><strong>@q.Name</strong></td>
+                        <td>@q.VenueName</td>
+                        <td><code class="fs-5">@q.Prefix</code></td>
+                        <td>
+                            <span class="badge @(q.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : q.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary")">
+                                @(q.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Open" : q.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "Paused" : "Closed")
+                            </span>
+                        </td>
+                        <td>@q.WaitingCount</td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@q.Id" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a>
+                            <a asp-action="Edit" asp-route-id="@q.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            <a asp-action="ToggleStatus" asp-route-id="@q.Id" class="btn btn-sm btn-outline-warning" title="Toggle Status">
+                                <i class="bi bi-toggle-on"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">Chưa có hàng chờ nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

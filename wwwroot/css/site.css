@@ -1,0 +1,142 @@
+/* =====================================================
+   QueueLink – Custom Styles
+   ===================================================== */
+
+/* ── Body & Base ───────────────────────────────────── */
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* ── Navbar ────────────────────────────────────────── */
+.navbar-brand {
+    font-size: 1.4rem;
+    letter-spacing: -0.3px;
+}
+
+/* ── Hero Section ──────────────────────────────────── */
+.hero-section {
+    background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    min-height: 480px;
+    padding: 80px 0;
+}
+
+.hero-section h1 {
+    letter-spacing: -1px;
+}
+
+/* ── Feature Cards ─────────────────────────────────── */
+.feature-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ── Queue Cards ───────────────────────────────────── */
+.queue-card {
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.queue-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.queue-card.border-secondary {
+    opacity: 0.7;
+}
+
+/* ── Ticket Card ────────────────────────────────────── */
+.ticket-card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.ticket-header {
+    background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+}
+
+.ticket-code-number {
+    font-size: 5rem;
+    letter-spacing: 4px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    line-height: 1;
+}
+
+/* ── Status Badges ──────────────────────────────────── */
+.badge-waiting  { background-color: #0d6efd; }
+.badge-called   { background-color: #ffc107; color: #212529; }
+.badge-serving  { background-color: #0dcaf0; color: #212529; }
+.badge-completed { background-color: #198754; }
+.badge-noshow   { background-color: #6c757d; }
+.badge-cancelled { background-color: #dc3545; }
+
+/* ── Admin Dashboard ────────────────────────────────── */
+.display-5 { font-size: 2.5rem; }
+
+/* ── QR Code Display ────────────────────────────────── */
+#qr-container img {
+    border: 8px solid white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Toast override ─────────────────────────────────── */
+.toast {
+    border-radius: 8px;
+}
+
+/* ── Table styles ───────────────────────────────────── */
+.table thead th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+}
+
+/* ── Form Inputs ────────────────────────────────────── */
+.form-control-lg, .form-select-lg {
+    border-radius: 10px;
+}
+
+/* ── Responsive ticket display ───────────────────────── */
+@media (max-width: 576px) {
+    .ticket-code-number {
+        font-size: 3.5rem;
+    }
+}
+
+/* ── Fade-in animation ──────────────────────────────── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+/* ── Tracking wide ──────────────────────────────────── */
+.tracking-wide {
+    letter-spacing: 0.15em;
+}

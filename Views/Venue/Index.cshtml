@@ -1,0 +1,72 @@
+@model IEnumerable<QueueLink.ViewModels.VenueFormViewModel>
+@{
+    ViewData["Title"] = "Quản lý Địa điểm";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="bi bi-geo-alt text-primary me-2"></i>Quản lý Địa điểm</h2>
+        </div>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Thêm địa điểm</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="card shadow-sm">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Tên</th>
+                    <th>Địa chỉ</th>
+                    <th>Điện thoại</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model)
+                {
+                    <tr>
+                        <td><strong>@v.Name</strong></td>
+                        <td>@v.Address</td>
+                        <td>@(v.Phone ?? "-")</td>
+                        <td>
+                            <span class="badge @(v.IsActive ? "bg-success" : "bg-secondary")">
+                                @(v.IsActive ? "Hoạt động" : "Tắt")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@v.Id" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a>
+                            <a asp-action="Edit" asp-route-id="@v.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            @if (v.IsActive)
+                            {
+                                <form asp-action="Deactivate" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@v.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-power"></i></button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Activate" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@v.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-power"></i></button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">Chưa có địa điểm nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

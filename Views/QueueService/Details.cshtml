@@ -1,0 +1,94 @@
+@model QueueLink.ViewModels.QueueServiceDetailsViewModel
+@{
+    ViewData["Title"] = Model.Name + " - Chi tiết";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-list-ul text-primary me-2"></i>@Model.Name</h2>
+            <p class="text-muted mb-0">@Model.VenueName &bull; @Model.Description</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Sửa</a>
+            <a asp-controller="StaffQueue" asp-action="Details" asp-route-queueServiceId="@Model.Id" class="btn btn-success"><i class="bi bi-display me-1"></i>Staff</a>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+        </div>
+    </div>
+
+    <!-- QR Code Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-qr-code me-2"></i>Mã QR để khách quét</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted small mb-3">
+                        In mã QR này và đặt tại cửa hàng hoặc quầy để khách quét.
+                    </p>
+                    <div class="d-inline-block p-3 bg-white border rounded-3 shadow-sm mb-3">
+                        <img src="@Url.Action("QRCode", new { id = Model.Id })" alt="QR Code" style="width: 200px; height: 200px;" />
+                    </div>
+                    <div>
+                        <p class="small text-muted mb-1">Public Join URL:</p>
+                        <code class="d-block p-2 bg-light rounded small text-break mb-3">@Model.PublicJoinUrl</code>
+                        <a asp-action="DownloadQRCode" asp-route-id="@Model.Id" class="btn btn-primary">
+                            <i class="bi bi-download me-1"></i>Tải mã QR
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Thông tin hàng chờ</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <div class="row mb-2">
+                            <dt class="col-sm-4 text-muted">Địa điểm</dt>
+                            <dd class="col-sm-8 fw-semibold">@Model.VenueName</dd>
+                        </div>
+                        <div class="row mb-2">
+                            <dt class="col-sm-4 text-muted">Prefix</dt>
+                            <dd class="col-sm-8"><code class="fs-5">@Model.Prefix</code></dd>
+                        </div>
+                        <div class="row mb-2">
+                            <dt class="col-sm-4 text-muted">TG phục vụ TB</dt>
+                            <dd class="col-sm-8">@Model.AverageServiceMinutes phút</dd>
+                        </div>
+                        <div class="row mb-2">
+                            <dt class="col-sm-4 text-muted">Trạng thái</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge @(Model.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : Model.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary")">
+                                    @(Model.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Open" : Model.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "Paused" : "Closed")
+                                </span>
+                            </dd>
+                        </div>
+                        <div class="row mb-2">
+                            <dt class="col-sm-4 text-muted">Đang chờ</dt>
+                            <dd class="col-sm-8">@Model.WaitingCount người</dd>
+                        </div>
+                        <div class="row mb-2">
+                            <dt class="col-sm-4 text-muted">Ngày tạo</dt>
+                            <dd class="col-sm-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="card-footer bg-white">
+                    <form asp-action="ToggleStatus" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn @(Model.QueueStatus == QueueLink.Models.QueueStatus.Open ? "btn-warning" : "btn-success")">
+                            <i class="bi bi-toggle-on me-1"></i>
+                            @(Model.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Tạm dừng" : "Mở lại")
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

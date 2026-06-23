@@ -1,0 +1,9 @@
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.csproj.AssemblyReference.cache
+D:\EXE101\QueueLink\obj\Debug\net8.0\rpswa.dswa.cache.json
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.GeneratedMSBuildEditorConfig.editorconfig
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.AssemblyInfoInputs.cache
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.AssemblyInfo.cs
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.csproj.CoreCompileInputs.cache
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.MvcApplicationPartsAssemblyInfo.cache
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.RazorAssemblyInfo.cache
+D:\EXE101\QueueLink\obj\Debug\net8.0\QueueLink.RazorAssemblyInfo.cs
