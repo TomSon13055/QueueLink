@@ -10,11 +10,37 @@ using QueueLink.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ──────────────────────────────────────────────────────────
-var connString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Railway cung cấp DATABASE_URL (postgresql://...). Nếu có → dùng PostgreSQL.
+// Nếu không → dùng SQL Server LocalDB từ appsettings.json (local dev).
+var connString = builder.Configuration.GetConnectionString("DefaultConnection");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connString));
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Parse postgresql://user:pass@host:port/dbname
+    var uri = new Uri(databaseUrl);
+    var pgUser = uri.UserInfo.Split(':')[0];
+    var pgPass = uri.UserInfo.Split(':')[1];
+    var pgHost = uri.Host;
+    var pgPort = uri.Port;
+    var pgDb = uri.AbsolutePath.TrimStart('/');
+
+    connString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};SSL Mode=Require;Trust Server Certificate=true";
+}
+
+if (string.IsNullOrEmpty(connString))
+    throw new InvalidOperationException("Connection string not found. Set DefaultConnection in appsettings.json or DATABASE_URL env var.");
+
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(connString));
+}
+else
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(connString));
+}
 
 // ── Identity ─────────────────────────────────────────────────────────
 builder.Services
