@@ -97,6 +97,10 @@ builder.Services.AddScoped<IQueueNotificationService, QueueNotificationService>(
 // ── MVC ─────────────────────────────────────────────────────────────
 builder.Services.AddControllersWithViews();
 
+// Railway cung cấp biến PORT — dùng nó; không có thì dùng 8080.
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 var app = builder.Build();
 
 // ── Seed data ────────────────────────────────────────────────────────
@@ -109,13 +113,15 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ── HTTP pipeline ────────────────────────────────────────────────────
+// Railway terminate SSL ở load balancer → app nhận HTTP. Tắt redirect để tránh loop.
+var isRailway = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PORT"));
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    if (!isRailway) app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!isRailway) app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
