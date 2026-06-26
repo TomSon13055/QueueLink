@@ -100,7 +100,7 @@ public class AccountController : Controller
         var normalizedEmail = model.Email.Trim().ToLowerInvariant();
 
         var existing = await _userManager.FindByEmailAsync(normalizedEmail);
-        if (existing != null)
+        if (existing != null && existing.EmailConfirmed)
         {
             ModelState.AddModelError(nameof(model.Email), "Email này đã được đăng ký. Vui lòng đăng nhập.");
             return View(model);
