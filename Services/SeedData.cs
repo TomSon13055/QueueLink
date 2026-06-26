@@ -143,7 +143,7 @@ public static class SeedData
 
         await db.Database.ExecuteSqlRawAsync($@"
             INSERT INTO ""{historyTable}"" (""MigrationId"", ""ProductVersion"")
-            VALUES ({CurrentMigrationName}, '9.0.0')
+            VALUES ('{CurrentMigrationName}', '9.0.0')
             ON CONFLICT (""MigrationId"") DO NOTHING");
     }
 
