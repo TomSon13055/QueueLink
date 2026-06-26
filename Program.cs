@@ -34,12 +34,18 @@ if (string.IsNullOrEmpty(connString))
 if (!string.IsNullOrEmpty(databaseUrl))
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(connString));
+    {
+        options.UseNpgsql(connString);
+        options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    });
 }
 else
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connString));
+    {
+        options.UseSqlServer(connString);
+        options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    });
 }
 
 // ── Identity ─────────────────────────────────────────────────────────

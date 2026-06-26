@@ -12,7 +12,7 @@ using QueueLink.Data;
 namespace QueueLink.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260625163100_InitialCreate")]
+    [Migration("20260626124125_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -219,6 +219,7 @@ namespace QueueLink.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
+                        .IsUnique()
                         .HasDatabaseName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")

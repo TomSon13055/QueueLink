@@ -260,7 +260,7 @@ namespace QueueLink.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("CustomerProfiles", (string)null);
+                    b.ToTable("CustomerProfiles");
                 });
 
             modelBuilder.Entity("QueueLink.Models.EmailOtp", b =>
@@ -300,7 +300,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("Email", "IsUsed", "ExpiresAt");
 
-                    b.ToTable("EmailOtps", (string)null);
+                    b.ToTable("EmailOtps");
                 });
 
             modelBuilder.Entity("QueueLink.Models.QueueService", b =>
@@ -344,7 +344,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("VenueId", "Name");
 
-                    b.ToTable("QueueServices", (string)null);
+                    b.ToTable("QueueServices");
                 });
 
             modelBuilder.Entity("QueueLink.Models.QueueTicket", b =>
@@ -420,7 +420,7 @@ namespace QueueLink.Migrations
                     b.HasIndex("QueueServiceId", "TicketDate", "TicketNumber")
                         .IsUnique();
 
-                    b.ToTable("QueueTickets", (string)null);
+                    b.ToTable("QueueTickets");
                 });
 
             modelBuilder.Entity("QueueLink.Models.TicketStatusHistory", b =>
@@ -458,7 +458,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("QueueTicketId");
 
-                    b.ToTable("TicketStatusHistories", (string)null);
+                    b.ToTable("TicketStatusHistories");
                 });
 
             modelBuilder.Entity("QueueLink.Models.Venue", b =>
@@ -501,7 +501,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Venues", (string)null);
+                    b.ToTable("Venues");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

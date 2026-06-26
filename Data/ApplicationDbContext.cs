@@ -22,6 +22,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<ApplicationUser>(e =>
+        {
+            e.HasIndex(u => u.NormalizedEmail).IsUnique();
+        });
+
         builder.Entity<Venue>(e =>
         {
             e.HasIndex(v => v.Name);
