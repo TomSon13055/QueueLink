@@ -37,6 +37,22 @@ public class GmailSender : IEmailSender
             return true;
         }
 
+        // Nếu SMTP host không resolve được → fail ngay (không đợi 15s timeout).
+        try
+        {
+            var addresses = await System.Net.Dns.GetHostAddressesAsync(_options.Smtp.Host, ct);
+            if (addresses.Length == 0)
+            {
+                _logger.LogError("[Email:Failed] Host '{Host}' could not be resolved", _options.Smtp.Host);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Email:Failed] Could not resolve host '{Host}'", _options.Smtp.Host);
+            return false;
+        }
+
         try
         {
             using var client = new SmtpClient();

@@ -42,6 +42,12 @@ public class OtpService : IOtpService
         var code = RandomNumberGenerator.GetInt32(0, (int)Math.Pow(10, OtpLength))
             .ToString($"D{OtpLength}");
 
+        var (subject, html) = EmailTemplates.OtpVerification(fullName, code, (int)OtpLifetime.TotalMinutes);
+        var sent = await _email.SendHtmlAsync(normalized, subject, html, ct);
+
+        if (!sent)
+            throw new InvalidOperationException($"Không thể gửi email OTP tới {normalized}.");
+
         var otp = new EmailOtp
         {
             Email = normalized,
@@ -55,11 +61,8 @@ public class OtpService : IOtpService
         _db.EmailOtps.Add(otp);
         await _db.SaveChangesAsync(ct);
 
-        var (subject, html) = EmailTemplates.OtpVerification(fullName, code, (int)OtpLifetime.TotalMinutes);
-        await _email.SendHtmlAsync(normalized, subject, html, ct);
-
         _logger.LogInformation("[Otp] Issued OTP for {Email}", normalized);
-        return code; // trả về để fallback console có thể log
+        return code;
     }
 
     public async Task<bool> VerifyAsync(string email, string code, CancellationToken ct = default)
