@@ -144,10 +144,19 @@ public class AccountController : Controller
         _db.CustomerProfiles.Add(profile);
         await _db.SaveChangesAsync();
 
-        // Sinh và gửi OTP.
-        await _otp.GenerateAndSendAsync(normalizedEmail, model.FullName);
+        // Sinh và gửi OTP. Nếu gửi thất bại (Gmail chưa cấu hình / timeout),
+        // user vẫn được tạo nhưng cần đợi admin hỗ trợ xác thực email.
+        try
+        {
+            await _otp.GenerateAndSendAsync(normalizedEmail, model.FullName);
+            TempData["Info"] = $"Mã OTP đã được gửi tới {normalizedEmail}. Vui lòng kiểm tra hộp thư (kể cả thư mục Spam).";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Register] Failed to send OTP for {Email}", normalizedEmail);
+            TempData["Warning"] = $"Không thể gửi mã OTP tự động. Vui lòng liên hệ hỗ trợ để xác thực tài khoản.";
+        }
 
-        TempData["Info"] = $"Mã OTP đã được gửi tới {normalizedEmail}. Vui lòng kiểm tra hộp thư (kể cả thư mục Spam).";
         return RedirectToAction(nameof(VerifyOtp), new { email = normalizedEmail });
     }
 

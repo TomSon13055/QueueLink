@@ -18,6 +18,13 @@
                         Vui lòng nhập mã 6 chữ số (có hiệu lực 5 phút).
                     </p>
 
+                    @if (TempData["Warning"] != null)
+                    {
+                        <div class="alert alert-warning">
+                            @TempData["Warning"]
+                        </div>
+                    }
+
                     @if (ViewData.ModelState.ErrorCount > 0)
                     {
                         <div class="alert alert-danger">

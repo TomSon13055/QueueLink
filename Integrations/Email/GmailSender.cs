@@ -10,6 +10,9 @@ namespace QueueLink.Integrations.Email;
 /// </summary>
 public class GmailSender : IEmailSender
 {
+    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(15);
+
     private readonly EmailOptions _options;
     private readonly ILogger<GmailSender> _logger;
 
@@ -30,7 +33,7 @@ public class GmailSender : IEmailSender
         // Fallback ra console nếu được cấu hình (dev mode hoặc chưa có Gmail).
         if (_options.UseConsoleFallback || string.IsNullOrWhiteSpace(_options.Smtp.Username))
         {
-            _logger.LogWarning("[Email:ConsoleFallback] To={To} Subject={Subject} Body={Body}", to, subject, body);
+            _logger.LogWarning("[Email:ConsoleFallback] To={To} Subject={Subject}", to, subject);
             return true;
         }
 
@@ -38,13 +41,14 @@ public class GmailSender : IEmailSender
         {
             using var client = new SmtpClient();
 
+            client.Timeout = (int)SendTimeout.TotalMilliseconds;
+
             // Gmail yêu cầu STARTTLS trên cổng 587. Port 465 dùng SSL trực tiếp.
             var secure = _options.Smtp.Port == 465
                 ? SecureSocketOptions.SslOnConnect
                 : (_options.Smtp.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.StartTlsWhenAvailable);
 
             await client.ConnectAsync(_options.Smtp.Host, _options.Smtp.Port, secure, ct);
-
             await client.AuthenticateAsync(_options.Smtp.Username, _options.Smtp.AppPassword, ct);
 
             var message = new MimeKit.MimeMessage();
@@ -60,6 +64,11 @@ public class GmailSender : IEmailSender
 
             _logger.LogInformation("[Email:Sent] To={To} Subject={Subject}", to, subject);
             return true;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("[Email:Cancelled] To={To} Subject={Subject} — request was cancelled", to, subject);
+            return false;
         }
         catch (Exception ex)
         {
