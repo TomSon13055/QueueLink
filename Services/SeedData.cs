@@ -12,7 +12,23 @@ public static class SeedData
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
-        await db.Database.MigrateAsync();
+        // Attempt to apply pending migrations.
+        // If the database already has tables from a previous deployment
+        // (different migration name in __EFMigrationsHistory) the first
+        // `MigrateAsync` call throws "relation already exists".  We fix
+        // the history table and retry so EF Core re-runs all migrations
+        // cleanly.
+        try
+        {
+            await db.Database.MigrateAsync();
+        }
+        catch (Exception ex) when (IsRelationAlreadyExists(ex))
+        {
+            // Database has tables but history is stale.  Clear it so EF
+            // re-applies everything from scratch.
+            await ClearMigrationHistoryAsync(db);
+            await db.Database.MigrateAsync();
+        }
 
         // ── Roles ─────────────────────────────────────────────────────
         await CreateRoleAsync(roleManager, "Admin");
@@ -100,6 +116,26 @@ public static class SeedData
         );
 
         await db.SaveChangesAsync();
+    }
+
+    private static bool IsRelationAlreadyExists(Exception ex)
+    {
+        var pg = ex as Npgsql.PostgresException
+            ?? ex.InnerException as Npgsql.PostgresException;
+        return pg?.SqlState == "42P07";
+    }
+
+    /// <summary>
+    /// Drops the EF Core migrations history table so all migrations
+    /// are re-applied from scratch on next call to MigrateAsync().
+    /// This handles the case where a previous deployment used a different
+    /// migration name/timestamp.
+    /// </summary>
+    private static async Task ClearMigrationHistoryAsync(ApplicationDbContext db)
+    {
+        const string historyTable = "__EFMigrationsHistory";
+        await db.Database.ExecuteSqlRawAsync($@"
+            DROP TABLE IF EXISTS ""{historyTable}"" CASCADE");
     }
 
     private static async Task CreateRoleAsync(RoleManager<IdentityRole> roleManager, string roleName)
