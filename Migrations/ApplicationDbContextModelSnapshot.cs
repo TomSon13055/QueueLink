@@ -216,6 +216,7 @@ namespace QueueLink.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
+                        .IsUnique()
                         .HasDatabaseName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")
@@ -259,7 +260,7 @@ namespace QueueLink.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("CustomerProfiles");
+                    b.ToTable("CustomerProfiles", (string)null);
                 });
 
             modelBuilder.Entity("QueueLink.Models.EmailOtp", b =>
@@ -299,7 +300,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("Email", "IsUsed", "ExpiresAt");
 
-                    b.ToTable("EmailOtps");
+                    b.ToTable("EmailOtps", (string)null);
                 });
 
             modelBuilder.Entity("QueueLink.Models.QueueService", b =>
@@ -343,7 +344,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("VenueId", "Name");
 
-                    b.ToTable("QueueServices");
+                    b.ToTable("QueueServices", (string)null);
                 });
 
             modelBuilder.Entity("QueueLink.Models.QueueTicket", b =>
@@ -419,7 +420,7 @@ namespace QueueLink.Migrations
                     b.HasIndex("QueueServiceId", "TicketDate", "TicketNumber")
                         .IsUnique();
 
-                    b.ToTable("QueueTickets");
+                    b.ToTable("QueueTickets", (string)null);
                 });
 
             modelBuilder.Entity("QueueLink.Models.TicketStatusHistory", b =>
@@ -457,7 +458,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("QueueTicketId");
 
-                    b.ToTable("TicketStatusHistories");
+                    b.ToTable("TicketStatusHistories", (string)null);
                 });
 
             modelBuilder.Entity("QueueLink.Models.Venue", b =>
@@ -500,7 +501,7 @@ namespace QueueLink.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Venues");
+                    b.ToTable("Venues", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

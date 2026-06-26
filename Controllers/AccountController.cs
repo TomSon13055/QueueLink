@@ -100,10 +100,15 @@ public class AccountController : Controller
         var normalizedEmail = model.Email.Trim().ToLowerInvariant();
 
         var existing = await _userManager.FindByEmailAsync(normalizedEmail);
-        if (existing != null && existing.EmailConfirmed)
+        if (existing != null)
         {
-            ModelState.AddModelError(nameof(model.Email), "Email này đã được đăng ký. Vui lòng đăng nhập.");
-            return View(model);
+            if (existing.EmailConfirmed)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email này đã được đăng ký. Vui lòng đăng nhập.");
+                return View(model);
+            }
+            // User đã tạo nhưng chưa xác nhận OTP — xóa để đăng ký lại sạch sẽ.
+            await _userManager.DeleteAsync(existing);
         }
 
         // Tạo user mới, KHÔNG đăng nhập ngay — phải xác thực OTP trước.
