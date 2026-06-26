@@ -7,6 +7,10 @@ namespace QueueLink.Services;
 
 public static class SeedData
 {
+    // Hardcoded: must match the latest migration class name.
+    // Update this if you add/rename migrations.
+    private const string CurrentMigrationName = "InitialCreate";
+
     public static async Task InitializeAsync(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
@@ -14,20 +18,17 @@ public static class SeedData
     {
         // Attempt to apply pending migrations.
         // If the database already has tables from a previous deployment
-        // (different migration name in __EFMigrationsHistory) the first
-        // `MigrateAsync` call throws "relation already exists".  We fix
-        // the history table and retry so EF Core re-runs all migrations
-        // cleanly.
+        // (e.g. migration name changed between deploys), MigrateAsync()
+        // throws "relation already exists".  In that case we record the
+        // current migration in __EFMigrationsHistory so EF Core treats it
+        // as already applied and the app starts normally.
         try
         {
             await db.Database.MigrateAsync();
         }
         catch (Exception ex) when (IsRelationAlreadyExists(ex))
         {
-            // Database has tables but history is stale.  Clear it so EF
-            // re-applies everything from scratch.
-            await ClearMigrationHistoryAsync(db);
-            await db.Database.MigrateAsync();
+            await EnsureMigrationRecordedAsync(db);
         }
 
         // ── Roles ─────────────────────────────────────────────────────
@@ -126,16 +127,24 @@ public static class SeedData
     }
 
     /// <summary>
-    /// Drops the EF Core migrations history table so all migrations
-    /// are re-applied from scratch on next call to MigrateAsync().
-    /// This handles the case where a previous deployment used a different
-    /// migration name/timestamp.
+    /// Creates __EFMigrationsHistory (if missing) and inserts the current
+    /// migration name so EF Core treats it as already applied.
     /// </summary>
-    private static async Task ClearMigrationHistoryAsync(ApplicationDbContext db)
+    private static async Task EnsureMigrationRecordedAsync(ApplicationDbContext db)
     {
         const string historyTable = "__EFMigrationsHistory";
+
         await db.Database.ExecuteSqlRawAsync($@"
-            DROP TABLE IF EXISTS ""{historyTable}"" CASCADE");
+            CREATE TABLE IF NOT EXISTS ""{historyTable}"" (
+                ""MigrationId"" character varying(150) NOT NULL,
+                ""ProductVersion"" character varying(32) NOT NULL,
+                CONSTRAINT ""PK_{historyTable}"" PRIMARY KEY (""MigrationId"")
+            )");
+
+        await db.Database.ExecuteSqlRawAsync($@"
+            INSERT INTO ""{historyTable}"" (""MigrationId"", ""ProductVersion"")
+            VALUES ({CurrentMigrationName}, '9.0.0')
+            ON CONFLICT (""MigrationId"") DO NOTHING");
     }
 
     private static async Task CreateRoleAsync(RoleManager<IdentityRole> roleManager, string roleName)
