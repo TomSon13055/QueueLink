@@ -12,7 +12,7 @@ using QueueLink.Data;
 namespace QueueLink.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260626124125_InitialCreate")]
+    [Migration("20260626131810_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

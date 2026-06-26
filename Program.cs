@@ -17,12 +17,13 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-    // Parse postgresql://user:pass@host:port/dbname
+    // Railway uses postgres:// or postgresql://
     var uri = new Uri(databaseUrl);
-    var pgUser = uri.UserInfo.Split(':')[0];
-    var pgPass = uri.UserInfo.Split(':')[1];
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var pgUser = userInfo[0];
+    var pgPass = userInfo.Length > 1 ? userInfo[1] : "";
     var pgHost = uri.Host;
-    var pgPort = uri.Port;
+    var pgPort = uri.Port > 0 ? uri.Port : 5432;
     var pgDb = uri.AbsolutePath.TrimStart('/');
 
     connString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};SSL Mode=Require;Trust Server Certificate=true";
