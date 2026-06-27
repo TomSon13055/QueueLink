@@ -10,6 +10,13 @@ using QueueLink.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Logging ──────────────────────────────────────────────────────────
+// Railway giới hạn 500 logs/sec — giới hạn console output.
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Information);
+builder.Logging.AddFilter("QueueLink", LogLevel.Information);
+
 // ── Database ──────────────────────────────────────────────────────────
 // Railway cung cấp DATABASE_URL (postgresql://...). Nếu có → dùng PostgreSQL.
 // Nếu không → dùng SQL Server LocalDB từ appsettings.json (local dev).
