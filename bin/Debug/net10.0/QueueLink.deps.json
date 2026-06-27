@@ -9,9 +9,11 @@
       "QueueLink/1.0.0": {
         "dependencies": {
           "MailKit": "4.7.1.1",
+          "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore": "9.0.0",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "9.0.0",
           "Microsoft.EntityFrameworkCore.Design": "9.0.0",
           "Microsoft.EntityFrameworkCore.SqlServer": "9.0.0",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.2",
           "QRCoder": "1.6.0"
         },
         "runtime": {
@@ -69,6 +71,17 @@
           "lib/net8.0/MailKit.dll": {
             "assemblyVersion": "4.7.0.0",
             "fileVersion": "4.7.1.1"
+          }
+        }
+      },
+      "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/9.0.0": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "9.0.0"
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.52903"
           }
         }
       },
@@ -625,6 +638,27 @@
           }
         }
       },
+      "Npgsql/9.0.2": {
+        "runtime": {
+          "lib/net8.0/Npgsql.dll": {
+            "assemblyVersion": "9.0.2.0",
+            "fileVersion": "9.0.2.0"
+          }
+        }
+      },
+      "Npgsql.EntityFrameworkCore.PostgreSQL/9.0.2": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "9.0.0",
+          "Microsoft.EntityFrameworkCore.Relational": "9.0.0",
+          "Npgsql": "9.0.2"
+        },
+        "runtime": {
+          "lib/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll": {
+            "assemblyVersion": "9.0.2.0",
+            "fileVersion": "9.0.2.0"
+          }
+        }
+      },
       "QRCoder/1.6.0": {
         "runtime": {
           "lib/net6.0/QRCoder.dll": {
@@ -877,6 +911,13 @@
       "path": "mailkit/4.7.1.1",
       "hashPath": "mailkit.4.7.1.1.nupkg.sha512"
     },
+    "Microsoft.AspNetCore.DataProtection.EntityFrameworkCore/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-P2cZiOeu9ovruTHJimojQ7DWG8GRgY31uUpM39grU4iNW2Wd+yheNMj3AViWtyK61U3yMN3KVwUr051Zn8qRFA==",
+      "path": "microsoft.aspnetcore.dataprotection.entityframeworkcore/9.0.0",
+      "hashPath": "microsoft.aspnetcore.dataprotection.entityframeworkcore.9.0.0.nupkg.sha512"
+    },
     "Microsoft.AspNetCore.Identity.EntityFrameworkCore/9.0.0": {
       "type": "package",
       "serviceable": true,
@@ -1072,6 +1113,20 @@
       "sha512": "sha512-YqueG52R/Xej4VVbKuRIodjiAhV0HR/XVbLbNrJhCZnzjnSjgMJ/dCdV0akQQxavX6hp/LC6rqLGLcXeQYU7XA==",
       "path": "mono.texttemplating/3.0.0",
       "hashPath": "mono.texttemplating.3.0.0.nupkg.sha512"
+    },
+    "Npgsql/9.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hCbO8box7i/XXiTFqCJ3GoowyLqx3JXxyrbOJ6om7dr+eAknvBNhhUHeJVGAQo44sySZTfdVffp4BrtPeLZOAA==",
+      "path": "npgsql/9.0.2",
+      "hashPath": "npgsql.9.0.2.nupkg.sha512"
+    },
+    "Npgsql.EntityFrameworkCore.PostgreSQL/9.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-cYdOGplIvr9KgsG8nJ8xnzBTImeircbgetlzS1OmepS5dAQW6PuGpVrLOKBNEwEvGYZPsV8037X5vZ/Dmpwz7Q==",
+      "path": "npgsql.entityframeworkcore.postgresql/9.0.2",
+      "hashPath": "npgsql.entityframeworkcore.postgresql.9.0.2.nupkg.sha512"
     },
     "QRCoder/1.6.0": {
       "type": "package",

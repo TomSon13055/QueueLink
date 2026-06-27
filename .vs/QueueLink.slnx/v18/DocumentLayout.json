@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "D:\\EXE101\\QueueLink\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\services\\seeddata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:services\\seeddata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -27,24 +35,12 @@
       "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:views\\queueservice\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\views\\home\\privacy.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:views\\home\\privacy.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\hubs\\queuehub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:hubs\\queuehub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\migrations\\applicationdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:migrations\\applicationdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\migrations\\20260619031810_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|solutionrelative:migrations\\20260619031810_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B08F2C96-8BE6-FC33-F741-8EF939B30B28}|QueueLink.csproj|d:\\exe101\\queuelink\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -62,7 +58,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -74,33 +70,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Details.cshtml",
-              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\QueueService\\Details.cshtml",
-              "RelativeDocumentMoniker": "Views\\QueueService\\Details.cshtml",
-              "ToolTip": "D:\\EXE101\\QueueLink\\Views\\QueueService\\Details.cshtml",
-              "RelativeToolTip": "Views\\QueueService\\Details.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-06-20T04:11:40.653Z",
+              "DocumentIndex": 0,
+              "Title": "SeedData.cs",
+              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Services\\SeedData.cs",
+              "RelativeDocumentMoniker": "Services\\SeedData.cs",
+              "ToolTip": "D:\\EXE101\\QueueLink\\Services\\SeedData.cs",
+              "RelativeToolTip": "Services\\SeedData.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAQwAYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-26T12:31:33.045Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Privacy.cshtml",
-              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\Home\\Privacy.cshtml",
-              "RelativeDocumentMoniker": "Views\\Home\\Privacy.cshtml",
-              "ToolTip": "D:\\EXE101\\QueueLink\\Views\\Home\\Privacy.cshtml",
-              "RelativeToolTip": "Views\\Home\\Privacy.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-06-20T04:11:29.145Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
               "Title": "Index.cshtml",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\Home\\Index.cshtml",
               "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
@@ -113,20 +96,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "ApplicationDbContextModelSnapshot.cs",
-              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Migrations\\ApplicationDbContextModelSnapshot.cs",
-              "RelativeDocumentMoniker": "Migrations\\ApplicationDbContextModelSnapshot.cs",
-              "ToolTip": "D:\\EXE101\\QueueLink\\Migrations\\ApplicationDbContextModelSnapshot.cs",
-              "RelativeToolTip": "Migrations\\ApplicationDbContextModelSnapshot.cs",
-              "ViewState": "AgIAAK4BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-19T07:59:33.091Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -134,25 +104,47 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAGMAAAAAAAAAAAAiwG4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-19T15:01:32.386Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-19T15:01:32.386Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
               "ToolTip": "D:\\EXE101\\QueueLink\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAABNAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAACEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-06-19T15:03:49.207Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-19T15:03:49.207Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 8,
+              "Title": "Privacy.cshtml",
+              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\Home\\Privacy.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Privacy.cshtml",
+              "ToolTip": "D:\\EXE101\\QueueLink\\Views\\Home\\Privacy.cshtml",
+              "RelativeToolTip": "Views\\Home\\Privacy.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-06-20T04:11:29.145Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Details.cshtml",
+              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\QueueService\\Details.cshtml",
+              "RelativeDocumentMoniker": "Views\\QueueService\\Details.cshtml",
+              "ToolTip": "D:\\EXE101\\QueueLink\\Views\\QueueService\\Details.cshtml",
+              "RelativeToolTip": "Views\\QueueService\\Details.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-06-20T04:11:40.653Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "Create.cshtml",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\QueueService\\Create.cshtml",
               "RelativeDocumentMoniker": "Views\\QueueService\\Create.cshtml",
@@ -160,12 +152,11 @@
               "RelativeToolTip": "Views\\QueueService\\Create.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-06-20T04:11:42.048Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-20T04:11:42.048Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "Login.cshtml",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\Account\\Login.cshtml",
               "RelativeDocumentMoniker": "Views\\Account\\Login.cshtml",
@@ -173,25 +164,11 @@
               "RelativeToolTip": "Views\\Account\\Login.cshtml",
               "ViewState": "AgIAABsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-06-20T04:11:47.446Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-20T04:11:47.446Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "20260619031810_InitialCreate.cs",
-              "DocumentMoniker": "D:\\EXE101\\QueueLink\\Migrations\\20260619031810_InitialCreate.cs",
-              "RelativeDocumentMoniker": "Migrations\\20260619031810_InitialCreate.cs",
-              "ToolTip": "D:\\EXE101\\QueueLink\\Migrations\\20260619031810_InitialCreate.cs",
-              "RelativeToolTip": "Migrations\\20260619031810_InitialCreate.cs",
-              "ViewState": "AgIAANMAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-19T07:59:25.483Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "AccessDenied.cshtml",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Views\\Account\\AccessDenied.cshtml",
               "RelativeDocumentMoniker": "Views\\Account\\AccessDenied.cshtml",
@@ -199,12 +176,11 @@
               "RelativeToolTip": "Views\\Account\\AccessDenied.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-06-20T04:11:46.566Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-20T04:11:46.566Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "QueueHub.cs",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Hubs\\QueueHub.cs",
               "RelativeDocumentMoniker": "Hubs\\QueueHub.cs",
@@ -212,12 +188,11 @@
               "RelativeToolTip": "Hubs\\QueueHub.cs",
               "ViewState": "AgIAACIAAAAAAAAAAAAkwCYAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-19T03:28:13.174Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-19T03:28:13.174Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 10,
               "Title": "ApplicationDbContext.cs",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\Data\\ApplicationDbContext.cs",
               "RelativeDocumentMoniker": "Data\\ApplicationDbContext.cs",
@@ -225,12 +200,11 @@
               "RelativeToolTip": "Data\\ApplicationDbContext.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-19T07:59:19.391Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-19T07:59:19.391Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 11,
               "Title": "appsettings.Development.json",
               "DocumentMoniker": "D:\\EXE101\\QueueLink\\appsettings.Development.json",
               "RelativeDocumentMoniker": "appsettings.Development.json",

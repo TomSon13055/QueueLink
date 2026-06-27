@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
@@ -39,6 +40,11 @@ if (!string.IsNullOrEmpty(databaseUrl))
         options.UseNpgsql(connString);
         options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
+
+    // Persist antiforgery / session keys to PostgreSQL so they survive container restarts.
+    builder.Services.AddDataProtection()
+        .SetApplicationName("QueueLink")
+        .PersistKeysToDbContext<ApplicationDbContext>();
 }
 else
 {
