@@ -96,6 +96,10 @@ if (emailProvider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddScoped<IEmailSender, ResendSender>();
 }
+else if (emailProvider.Equals("Brevo", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IEmailSender, BrevoSender>();
+}
 else
 {
     builder.Services.AddScoped<IEmailSender, GmailSender>();

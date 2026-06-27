@@ -18,6 +18,7 @@ public class EmailOptions
     public bool UseConsoleFallback { get; set; } = false;
 
     public ResendOptions Resend { get; set; } = new();
+    public BrevoOptions Brevo { get; set; } = new();
 }
 
 public class SmtpOptions
@@ -51,18 +52,15 @@ public class ResendOptions
 {
     public const string SectionName = "Resend";
 
-    /// <summary>
-    /// API Key từ Resend.com (bắt đầu bằng "re_").
-    /// </summary>
     public string ApiKey { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Domain đã xác minh trên Resend (vd: "resend.dev").
-    /// </summary>
     public string Domain { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Email sender name (vd: "QueueLink").
-    /// </summary>
     public string FromName { get; set; } = "QueueLink";
+}
+
+public class BrevoOptions
+{
+    public const string SectionName = "Brevo";
+
+    public string ApiKey { get; set; } = string.Empty;
+    public string SenderName { get; set; } = "QueueLink";
 }
