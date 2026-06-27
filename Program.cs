@@ -91,7 +91,15 @@ builder.Services.AddScoped<IGuestSession, GuestSession>();
 
 // ── Email integration ────────────────────────────────────────────────
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
-builder.Services.AddScoped<IEmailSender, GmailSender>();
+var emailProvider = builder.Configuration.GetValue<string>("Email:Provider") ?? "Gmail";
+if (emailProvider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IEmailSender, ResendSender>();
+}
+else
+{
+    builder.Services.AddScoped<IEmailSender, GmailSender>();
+}
 
 // ── SignalR ─────────────────────────────────────────────────────────
 builder.Services.AddSignalR();

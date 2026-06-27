@@ -4,6 +4,9 @@ public class EmailOptions
 {
     public const string SectionName = "Email";
 
+    /// <summary>
+    /// "Gmail" hoặc "Resend". Khi là "Resend", dùng HTTP API thay vì SMTP.
+    /// </summary>
     public string Provider { get; set; } = "Gmail";
 
     public SmtpOptions Smtp { get; set; } = new();
@@ -13,6 +16,8 @@ public class EmailOptions
     /// Bật trong development nếu chưa cấu hình Gmail.
     /// </summary>
     public bool UseConsoleFallback { get; set; } = false;
+
+    public ResendOptions Resend { get; set; } = new();
 }
 
 public class SmtpOptions
@@ -40,4 +45,24 @@ public class SmtpOptions
     /// Bật SSL/TLS (true cho Gmail).
     /// </summary>
     public bool UseSsl { get; set; } = true;
+}
+
+public class ResendOptions
+{
+    public const string SectionName = "Resend";
+
+    /// <summary>
+    /// API Key từ Resend.com (bắt đầu bằng "re_").
+    /// </summary>
+    public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Domain đã xác minh trên Resend (vd: "resend.dev").
+    /// </summary>
+    public string Domain { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Email sender name (vd: "QueueLink").
+    /// </summary>
+    public string FromName { get; set; } = "QueueLink";
 }
