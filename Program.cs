@@ -16,6 +16,8 @@ builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Information);
 builder.Logging.AddFilter("QueueLink", LogLevel.Information);
+builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Warning);
 
 // ── Database ──────────────────────────────────────────────────────────
 // Railway cung cấp DATABASE_URL (postgresql://...). Nếu có → dùng PostgreSQL.
