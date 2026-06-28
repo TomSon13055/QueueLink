@@ -1,13 +1,10 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
-using QueueLink.Integrations.Auth;
 using QueueLink.Integrations.Session;
 using QueueLink.Models;
-using QueueLink.Services;
 using QueueLink.ViewModels;
 
 namespace QueueLink.Controllers;
@@ -17,7 +14,6 @@ public class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _db;
-    private readonly ISupabaseAuthService _auth;
     private readonly IGuestSession _guestSession;
     private readonly ILogger<AccountController> _logger;
 
@@ -25,19 +21,17 @@ public class AccountController : Controller
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext db,
-        ISupabaseAuthService auth,
         IGuestSession guestSession,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _db = db;
-        _auth = auth;
         _guestSession = guestSession;
         _logger = logger;
     }
 
-    // ── Login (local password) ────────────────────────────────────────
+    // ── Login / Logout ───────────────────────────────────────────────
 
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
@@ -70,35 +64,6 @@ public class AccountController : Controller
         return View();
     }
 
-    // ── Magic Link Login ───────────────────────────────────────────────
-
-    [HttpGet]
-    public IActionResult MagicLinkLogin()
-    {
-        return View(new MagicLinkLoginViewModel());
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> MagicLinkLogin(MagicLinkLoginViewModel model)
-    {
-        if (!ModelState.IsValid) return View(model);
-
-        var normalized = model.Email.Trim().ToLowerInvariant();
-        var result = await _auth.SendMagicLinkAsync(normalized);
-
-        if (!result.Ok)
-        {
-            // Vẫn hiển thị thành công để tránh email enumeration
-            _logger.LogWarning("[MagicLink] Send failed for {Email}: {Error}", normalized, result.Error);
-        }
-
-        TempData["Info"] = "Nếu email tồn tại trong hệ thống, một liên kết đăng nhập đã được gửi. Vui lòng kiểm tra hộp thư (kể cả Spam).";
-        return RedirectToAction(nameof(Login));
-    }
-
-    // ── Logout ─────────────────────────────────────────────────────────
-
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -114,7 +79,7 @@ public class AccountController : Controller
         return View();
     }
 
-    // ── Register (Supabase Auth — email confirmation) ───────────────────
+    // ── Register (Customer only) ─────────────────────────────────────
 
     [HttpGet]
     public IActionResult Register()
@@ -128,65 +93,53 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var normalized = model.Email.Trim().ToLowerInvariant();
+        var normalizedEmail = model.Email.Trim().ToLowerInvariant();
 
-        // Kiểm tra user local đã tồn tại chưa.
-        var existing = await _userManager.FindByEmailAsync(normalized);
+        var existing = await _userManager.FindByEmailAsync(normalizedEmail);
         if (existing != null)
         {
             ModelState.AddModelError(nameof(model.Email), "Email này đã được đăng ký. Vui lòng đăng nhập.");
             return View(model);
         }
 
-        var result = await _auth.SignUpAsync(normalized, model.Password, model.FullName);
-
-        if (!result.Ok)
+        var user = new ApplicationUser
         {
-            // Supabase trả lỗi chi tiết: user_exists, weak_password, ...
-            ModelState.AddModelError("", result.Error ?? "Đăng ký thất bại. Vui lòng thử lại.");
+            UserName = normalizedEmail,
+            Email = normalizedEmail,
+            FullName = model.FullName,
+            EmailConfirmed = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createResult = await _userManager.CreateAsync(user, model.Password);
+        if (!createResult.Succeeded)
+        {
+            foreach (var err in createResult.Errors)
+                ModelState.AddModelError("", err.Description);
             return View(model);
         }
 
-        _logger.LogInformation("[Register] Supabase sign-up sent confirmation for {Email}", normalized);
+        await _userManager.AddToRoleAsync(user, "Customer");
 
-        TempData["Info"] = $"Đã gửi liên kết xác nhận tới {normalized}. Vui lòng kiểm tra hộp thư (kể cả Spam) để hoàn tất đăng ký.";
-        return RedirectToAction(nameof(Login));
-    }
-
-    // ── Confirm Email (called when user clicks link in Supabase email) ─
-
-    /// <summary>
-    /// Endpoint để xử lý email confirmation từ Supabase.
-    /// URL: /Account/ConfirmEmail?token=xxx
-    /// Sau khi exchange token thành công, user được đăng nhập local.
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> ConfirmEmail(string token, string? returnUrl = null)
-    {
-        if (string.IsNullOrWhiteSpace(token))
+        var profile = new CustomerProfile
         {
-            TempData["Error"] = "Liên kết không hợp lệ hoặc đã hết hạn.";
-            return RedirectToAction(nameof(Login));
-        }
+            UserId = user.Id,
+            FullName = model.FullName,
+            Phone = model.Phone,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _db.CustomerProfiles.Add(profile);
+        await _db.SaveChangesAsync();
 
-        var result = await _auth.ExchangeTokenAsync(token);
+        await _signInManager.SignInAsync(user, isPersistent: true);
+        await SyncGuestSessionAsync(normalizedEmail);
 
-        if (!result.Ok)
-        {
-            _logger.LogWarning("[ConfirmEmail] ExchangeToken failed: {Error}", result.Error);
-            TempData["Error"] = result.Error ?? "Xác nhận email thất bại. Liên kết có thể đã hết hạn.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        // Sync guest session sau khi đăng nhập.
-        if (result.Email != null)
-            await SyncGuestSessionAsync(result.Email);
-
-        TempData["Success"] = "Xác nhận email thành công! Chào mừng bạn đến với QueueLink.";
+        TempData["Success"] = "Đăng ký thành công! Chào mừng bạn đến với QueueLink.";
         return RedirectToAction("Index", "Home");
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────
 
     private async Task SyncGuestSessionAsync(string email)
     {
@@ -229,11 +182,4 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         return RedirectToAction("Index", "Home");
     }
-}
-
-public class MagicLinkLoginViewModel
-{
-    [Required(ErrorMessage = "Vui lòng nhập email")]
-    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-    public string Email { get; set; } = string.Empty;
 }

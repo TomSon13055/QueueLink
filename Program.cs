@@ -3,17 +3,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
 using QueueLink.Hubs;
-using QueueLink.Integrations.Auth;
-using QueueLink.Integrations.Email;
 using QueueLink.Integrations.Session;
 using QueueLink.Models;
 using QueueLink.Services;
-using Supabase;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Logging ──────────────────────────────────────────────────────────
-// Railway giới hạn 500 logs/sec — giới hạn console output.
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Information);
@@ -22,14 +18,11 @@ builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Warning);
 
 // ── Database ──────────────────────────────────────────────────────────
-// Railway cung cấp DATABASE_URL (postgresql://...). Nếu có → dùng PostgreSQL.
-// Nếu không → dùng SQL Server LocalDB từ appsettings.json (local dev).
 var connString = builder.Configuration.GetConnectionString("DefaultConnection");
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-    // Railway uses postgres:// or postgresql://
     var uri = new Uri(databaseUrl);
     var userInfo = uri.UserInfo.Split(':', 2);
     var pgUser = userInfo[0];
@@ -52,7 +45,6 @@ if (!string.IsNullOrEmpty(databaseUrl))
         options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
-    // Persist antiforgery / session keys to PostgreSQL so they survive container restarts.
     builder.Services.AddDataProtection()
         .SetApplicationName("QueueLink")
         .PersistKeysToDbContext<ApplicationDbContext>();
@@ -76,7 +68,6 @@ builder.Services
         options.Password.RequireUppercase = false;
         options.Password.RequireLowercase = true;
         options.User.RequireUniqueEmail = true;
-        // Không bắt buộc xác nhực email để login; controller sẽ enforce riêng
         options.SignIn.RequireConfirmedEmail = false;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -88,7 +79,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-// ── Session (lưu thông tin guest để auto-fill form lấy số) ────────────
+// ── Session ──────────────────────────────────────────────────────────
 var sessionTimeoutMin = builder.Configuration.GetValue<int?>("Session:TimeoutMinutes") ?? 10080;
 var sessionCookieName = builder.Configuration.GetValue<string>("Session:CookieName") ?? "QueueLink.Session";
 
@@ -102,67 +93,24 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(sessionTimeoutMin);
 });
 
-// HttpContextAccessor + GuestSession service
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IGuestSession, GuestSession>();
-
-// ── Email integration ────────────────────────────────────────────────
-builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
-var emailProvider = builder.Configuration.GetValue<string>("Email__Provider")
-                     ?? builder.Configuration.GetValue<string>("Email:Provider")
-                     ?? "Gmail";
-if (emailProvider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddScoped<IEmailSender, ResendSender>();
-}
-else if (emailProvider.Equals("Brevo", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddScoped<IEmailSender, BrevoSender>();
-}
-else
-{
-    builder.Services.AddScoped<IEmailSender, GmailSender>();
-}
-
-// ── Supabase Auth ───────────────────────────────────────────────────
-var supabaseUrl = Environment.GetEnvironmentVariable("Supabase__Url")
-                  ?? builder.Configuration.GetValue<string>("Supabase:Url")
-                  ?? "";
-var supabaseKey = Environment.GetEnvironmentVariable("Supabase__AnonKey")
-                  ?? builder.Configuration.GetValue<string>("Supabase:AnonKey")
-                  ?? "";
-
-if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
-{
-    var supabaseOptions = new SupabaseOptions
-    {
-        AutoRefreshToken = true,
-        AutoConnectRealtime = false
-    };
-    builder.Services.AddSingleton(_ => new Client(supabaseUrl, supabaseKey, supabaseOptions));
-    builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
-}
 
 // ── SignalR ─────────────────────────────────────────────────────────
 builder.Services.AddSignalR();
 
 // ── Services ─────────────────────────────────────────────────────────
 builder.Services.AddScoped<IQueueTicketService, QueueTicketService>();
-builder.Services.AddScoped<IOtpService, OtpService>();
-builder.Services.AddScoped<IQueueNotificationService, QueueNotificationService>();
 
 // ── MVC ─────────────────────────────────────────────────────────────
 builder.Services.AddControllersWithViews();
 
-// Railway cung cấp biến PORT — dùng nó; không có thì dùng 8080.
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
 
 // ── Ensure DataProtectionKeys table exists ──────────────────────────
-// Nếu chưa có bảng này, tạo ngay để tránh lỗi
-// System.Security.Cryptography.CryptographicException khi dùng session.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -186,7 +134,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ── HTTP pipeline ────────────────────────────────────────────────────
-// Railway terminate SSL ở load balancer → app nhận HTTP. Tắt redirect để tránh loop.
 var isRailway = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PORT"));
 if (!app.Environment.IsDevelopment())
 {
@@ -210,10 +157,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// ── SignalR hub mapping ──────────────────────────────────────────────
 app.MapHub<QueueHub>("/queueHub");
 
 app.Run();
 
-// Make Program class partial so generated test base class can inherit.
 public partial class Program { }

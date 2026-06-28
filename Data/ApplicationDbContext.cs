@@ -18,7 +18,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IDataPro
     public DbSet<QueueService> QueueServices => Set<QueueService>();
     public DbSet<QueueTicket> QueueTickets => Set<QueueTicket>();
     public DbSet<TicketStatusHistory> TicketStatusHistories => Set<TicketStatusHistory>();
-    public DbSet<EmailOtp> EmailOtps => Set<EmailOtp>();
     public DbSet<CustomerProfile> CustomerProfiles => Set<CustomerProfile>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -28,7 +27,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IDataPro
         builder.Entity<ApplicationUser>(e =>
         {
             e.HasIndex(u => u.NormalizedEmail).IsUnique();
-            e.HasIndex(u => u.SupabaseId);
         });
 
         builder.Entity<Venue>(e =>
@@ -49,7 +47,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IDataPro
 
         builder.Entity<QueueTicket>(e =>
         {
-            // Unique constraint: (QueueServiceId, TicketDate, TicketNumber)
             e.HasIndex(t => new { t.QueueServiceId, t.TicketDate, t.TicketNumber }).IsUnique();
             e.HasIndex(t => t.PublicToken).IsUnique();
 
@@ -67,15 +64,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IDataPro
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<EmailOtp>(e =>
-        {
-            e.HasIndex(o => new { o.Email, o.IsUsed, o.ExpiresAt });
-            e.Property(o => o.Email).IsRequired();
-        });
-
         builder.Entity<CustomerProfile>(e =>
         {
-            // 1-1 với ApplicationUser
             e.HasIndex(p => p.UserId).IsUnique();
             e.HasOne(p => p.User)
              .WithMany()

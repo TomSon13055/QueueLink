@@ -11,19 +11,11 @@ public class QueueTicketService : IQueueTicketService
 {
     private readonly ApplicationDbContext _db;
     private readonly IHubContext<QueueHub> _hub;
-    private readonly IQueueNotificationService _notifier;
-    private readonly int _upcomingTurnThreshold;
 
-    public QueueTicketService(
-        ApplicationDbContext db,
-        IHubContext<QueueHub> hub,
-        IConfiguration configuration,
-        IQueueNotificationService notifier)
+    public QueueTicketService(ApplicationDbContext db, IHubContext<QueueHub> hub)
     {
         _db = db;
         _hub = hub;
-        _notifier = notifier;
-        _upcomingTurnThreshold = configuration.GetValue<int?>("QueueLink:UpcomingTurnThreshold") ?? 3;
     }
 
     public async Task<QueueTicket> CreateTicketAsync(JoinQueueViewModel model, string? userId = null, CancellationToken ct = default)
@@ -37,7 +29,6 @@ public class QueueTicketService : IQueueTicketService
         if (qs.QueueStatus != QueueStatus.Open)
             throw new InvalidOperationException("Hàng chờ hiện không mở.");
 
-        // Atomic ticket-number generation using a transaction.
         var ticket = await _db.Database.BeginTransactionAsync(ct);
         try
         {
@@ -68,12 +59,10 @@ public class QueueTicketService : IQueueTicketService
             _db.QueueTickets.Add(newTicket);
             await _db.SaveChangesAsync(ct);
 
-            // Seed initial ETA based on existing waiting tickets.
             var peopleAhead = await GetPeopleAheadInternalAsync(newTicket.Id, ct);
             newTicket.EstimatedWaitMinutes = peopleAhead * qs.AverageServiceMinutes;
             await _db.SaveChangesAsync(ct);
 
-            // Record history.
             _db.TicketStatusHistories.Add(new TicketStatusHistory
             {
                 QueueTicketId = newTicket.Id,
@@ -85,7 +74,6 @@ public class QueueTicketService : IQueueTicketService
 
             await ticket.CommitAsync(ct);
 
-            // Broadcast queue update to all connected clients.
             await _hub.Clients.Group(QueueHub.QueueGroup(model.QueueServiceId))
                 .SendAsync("QueueUpdated", new { queueServiceId = model.QueueServiceId }, ct);
 
@@ -112,18 +100,8 @@ public class QueueTicketService : IQueueTicketService
         if (next == null) return null;
 
         await ChangeTicketStatusAsync(next.Id, TicketStatus.Called, userId, "Staff called next", ct);
-
-        // Gửi email "Đến lượt" cho người vừa được gọi.
-        await _notifier.NotifyYourTurnAsync(next.Id, ct);
-
-        // Sau khi chuyển sang Called, còn lại N người phía trước người thứ (N+1).
-        // Gửi email "Sắp đến lượt" cho khách vừa rơi vào ngưỡng (ví dụ còn 3).
-        await _notifier.NotifyUpcomingTurnsAsync(queueServiceId, _upcomingTurnThreshold, ct);
-
-        // Recalculate ETAs for remaining waiting tickets.
         await RecalculateEtasAsync(queueServiceId, ct);
 
-        // Broadcast currently-calling update.
         await _hub.Clients.Group(QueueHub.QueueGroup(queueServiceId))
             .SendAsync("CurrentlyCallingChanged", new
             {
@@ -167,7 +145,6 @@ public class QueueTicketService : IQueueTicketService
 
         await _db.SaveChangesAsync(ct);
 
-        // Broadcast updates.
         await _hub.Clients.Group(QueueHub.QueueGroup(ticket.QueueServiceId))
             .SendAsync("TicketUpdated", new
             {
@@ -190,13 +167,6 @@ public class QueueTicketService : IQueueTicketService
 
         await RecalculateEtasAsync(ticket.QueueServiceId, ct);
 
-        // Sau khi trạng thái thay đổi (Complete/NoShow/Cancelled), có thể có người
-        // vừa rơi vào ngưỡng "còn N người phía trước" → kiểm tra và gửi email.
-        if (newStatus is TicketStatus.Completed or TicketStatus.NoShow or TicketStatus.Cancelled)
-        {
-            await _notifier.NotifyUpcomingTurnsAsync(ticket.QueueServiceId, _upcomingTurnThreshold, ct);
-        }
-
         return true;
     }
 
@@ -212,7 +182,6 @@ public class QueueTicketService : IQueueTicketService
 
         var peopleAhead = await GetPeopleAheadAsync(ticket.Id, ct);
 
-        // Get the currently-called ticket for this queue.
         var today = DateTime.UtcNow.Date;
         var currentCall = await _db.QueueTickets
             .Where(t => t.QueueServiceId == ticket.QueueServiceId
@@ -307,8 +276,6 @@ public class QueueTicketService : IQueueTicketService
             QueueStatus = qs.QueueStatus
         };
     }
-
-    // ── private helpers ──────────────────────────────────────────────
 
     private async Task<int> GetPeopleAheadInternalAsync(int ticketId, CancellationToken ct)
     {
