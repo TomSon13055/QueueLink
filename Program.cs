@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
 using QueueLink.Hubs;
+using QueueLink.Integrations.Auth;
 using QueueLink.Integrations.Email;
 using QueueLink.Integrations.Session;
 using QueueLink.Models;
 using QueueLink.Services;
+using Supabase;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -120,6 +122,25 @@ else if (emailProvider.Equals("Brevo", StringComparison.OrdinalIgnoreCase))
 else
 {
     builder.Services.AddScoped<IEmailSender, GmailSender>();
+}
+
+// ── Supabase Auth ───────────────────────────────────────────────────
+var supabaseUrl = Environment.GetEnvironmentVariable("Supabase__Url")
+                  ?? builder.Configuration.GetValue<string>("Supabase:Url")
+                  ?? "";
+var supabaseKey = Environment.GetEnvironmentVariable("Supabase__AnonKey")
+                  ?? builder.Configuration.GetValue<string>("Supabase:AnonKey")
+                  ?? "";
+
+if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
+{
+    var supabaseOptions = new SupabaseOptions
+    {
+        AutoRefreshToken = true,
+        AutoConnectRealtime = false
+    };
+    builder.Services.AddSingleton(_ => new Client(supabaseUrl, supabaseKey, supabaseOptions));
+    builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
 }
 
 // ── SignalR ─────────────────────────────────────────────────────────

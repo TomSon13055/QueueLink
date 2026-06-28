@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
+using QueueLink.Integrations.Auth;
 using QueueLink.Integrations.Session;
 using QueueLink.Models;
 using QueueLink.Services;
@@ -15,7 +17,7 @@ public class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _db;
-    private readonly IOtpService _otp;
+    private readonly ISupabaseAuthService _auth;
     private readonly IGuestSession _guestSession;
     private readonly ILogger<AccountController> _logger;
 
@@ -23,19 +25,19 @@ public class AccountController : Controller
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext db,
-        IOtpService otp,
+        ISupabaseAuthService auth,
         IGuestSession guestSession,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _db = db;
-        _otp = otp;
+        _auth = auth;
         _guestSession = guestSession;
         _logger = logger;
     }
 
-    // ── Login / Logout ───────────────────────────────────────────────
+    // ── Login (local password) ────────────────────────────────────────
 
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
@@ -56,7 +58,7 @@ public class AccountController : Controller
             return View();
         }
 
-        var result = await _signInManager.PasswordSignInAsync(email, password, false, lockoutOnFailure: false);
+        var result = await _signInManager.PasswordSignInAsync(email, password, isPersistent: false, lockoutOnFailure: false);
 
         if (result.Succeeded)
         {
@@ -67,6 +69,35 @@ public class AccountController : Controller
         ModelState.AddModelError("", "Email hoặc mật khẩu không đúng.");
         return View();
     }
+
+    // ── Magic Link Login ───────────────────────────────────────────────
+
+    [HttpGet]
+    public IActionResult MagicLinkLogin()
+    {
+        return View(new MagicLinkLoginViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MagicLinkLogin(MagicLinkLoginViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var normalized = model.Email.Trim().ToLowerInvariant();
+        var result = await _auth.SendMagicLinkAsync(normalized);
+
+        if (!result.Ok)
+        {
+            // Vẫn hiển thị thành công để tránh email enumeration
+            _logger.LogWarning("[MagicLink] Send failed for {Email}: {Error}", normalized, result.Error);
+        }
+
+        TempData["Info"] = "Nếu email tồn tại trong hệ thống, một liên kết đăng nhập đã được gửi. Vui lòng kiểm tra hộp thư (kể cả Spam).";
+        return RedirectToAction(nameof(Login));
+    }
+
+    // ── Logout ─────────────────────────────────────────────────────────
 
     [Authorize]
     [HttpPost]
@@ -83,7 +114,7 @@ public class AccountController : Controller
         return View();
     }
 
-    // ── Register (Customer only) + OTP verification ──────────────────
+    // ── Register (Supabase Auth — email confirmation) ───────────────────
 
     [HttpGet]
     public IActionResult Register()
@@ -97,145 +128,66 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var normalizedEmail = model.Email.Trim().ToLowerInvariant();
+        var normalized = model.Email.Trim().ToLowerInvariant();
 
-        var existing = await _userManager.FindByEmailAsync(normalizedEmail);
+        // Kiểm tra user local đã tồn tại chưa.
+        var existing = await _userManager.FindByEmailAsync(normalized);
         if (existing != null)
         {
-            if (existing.EmailConfirmed)
-            {
-                ModelState.AddModelError(nameof(model.Email), "Email này đã được đăng ký. Vui lòng đăng nhập.");
-                return View(model);
-            }
-            // User đã tạo nhưng chưa xác nhận OTP — xóa để đăng ký lại sạch sẽ.
-            await _userManager.DeleteAsync(existing);
-        }
-
-        // Tạo user mới, KHÔNG đăng nhập ngay — phải xác thực OTP trước.
-        var user = new ApplicationUser
-        {
-            UserName = normalizedEmail,
-            Email = normalizedEmail,
-            FullName = model.FullName,
-            EmailConfirmed = false,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var createResult = await _userManager.CreateAsync(user, model.Password);
-        if (!createResult.Succeeded)
-        {
-            foreach (var err in createResult.Errors)
-                ModelState.AddModelError("", err.Description);
+            ModelState.AddModelError(nameof(model.Email), "Email này đã được đăng ký. Vui lòng đăng nhập.");
             return View(model);
         }
 
-        // Gán role Customer.
-        await _userManager.AddToRoleAsync(user, "Customer");
+        var result = await _auth.SignUpAsync(normalized, model.Password, model.FullName);
 
-        // Tạo CustomerProfile ngay để auto-fill form lấy số sau này.
-        var profile = new CustomerProfile
+        if (!result.Ok)
         {
-            UserId = user.Id,
-            FullName = model.FullName,
-            Phone = model.Phone,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        _db.CustomerProfiles.Add(profile);
-        await _db.SaveChangesAsync();
-
-        // Sinh và gửi OTP. Nếu gửi thất bại (Gmail chưa cấu hình / timeout),
-        // user vẫn được tạo nhưng cần đợi admin hỗ trợ xác thực email.
-        try
-        {
-            await _otp.GenerateAndSendAsync(normalizedEmail, model.FullName);
-            TempData["Info"] = $"Mã OTP đã được gửi tới {normalizedEmail}. Vui lòng kiểm tra hộp thư (kể cả thư mục Spam).";
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[Register] Failed to send OTP for {Email}", normalizedEmail);
-            TempData["Warning"] = $"Không thể gửi mã OTP tự động. Vui lòng liên hệ hỗ trợ để xác thực tài khoản.";
+            // Supabase trả lỗi chi tiết: user_exists, weak_password, ...
+            ModelState.AddModelError("", result.Error ?? "Đăng ký thất bại. Vui lòng thử lại.");
+            return View(model);
         }
 
-        return RedirectToAction(nameof(VerifyOtp), new { email = normalizedEmail });
+        _logger.LogInformation("[Register] Supabase sign-up sent confirmation for {Email}", normalized);
+
+        TempData["Info"] = $"Đã gửi liên kết xác nhận tới {normalized}. Vui lòng kiểm tra hộp thư (kể cả Spam) để hoàn tất đăng ký.";
+        return RedirectToAction(nameof(Login));
     }
 
+    // ── Confirm Email (called when user clicks link in Supabase email) ─
+
+    /// <summary>
+    /// Endpoint để xử lý email confirmation từ Supabase.
+    /// URL: /Account/ConfirmEmail?token=xxx
+    /// Sau khi exchange token thành công, user được đăng nhập local.
+    /// </summary>
     [HttpGet]
-    public IActionResult VerifyOtp(string email)
+    public async Task<IActionResult> ConfirmEmail(string token, string? returnUrl = null)
     {
-        if (string.IsNullOrWhiteSpace(email))
-            return RedirectToAction(nameof(Register));
-
-        return View(new VerifyOtpViewModel { Email = email });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> VerifyOtp(VerifyOtpViewModel model)
-    {
-        if (!ModelState.IsValid) return View(model);
-
-        var normalizedEmail = model.Email.Trim().ToLowerInvariant();
-        var ok = await _otp.VerifyAsync(normalizedEmail, model.Code);
-
-        if (!ok)
+        if (string.IsNullOrWhiteSpace(token))
         {
-            ModelState.AddModelError("", "Mã OTP không đúng hoặc đã hết hạn.");
-            return View(model);
+            TempData["Error"] = "Liên kết không hợp lệ hoặc đã hết hạn.";
+            return RedirectToAction(nameof(Login));
         }
 
-        var user = await _userManager.FindByEmailAsync(normalizedEmail);
-        if (user == null)
+        var result = await _auth.ExchangeTokenAsync(token);
+
+        if (!result.Ok)
         {
-            ModelState.AddModelError("", "Không tìm thấy tài khoản.");
-            return View(model);
+            _logger.LogWarning("[ConfirmEmail] ExchangeToken failed: {Error}", result.Error);
+            TempData["Error"] = result.Error ?? "Xác nhận email thất bại. Liên kết có thể đã hết hạn.";
+            return RedirectToAction(nameof(Login));
         }
 
-        // Đánh dấu email đã xác thực + đăng nhập luôn.
-        user.EmailConfirmed = true;
-        await _userManager.UpdateAsync(user);
+        // Sync guest session sau khi đăng nhập.
+        if (result.Email != null)
+            await SyncGuestSessionAsync(result.Email);
 
-        await _signInManager.SignInAsync(user, isPersistent: true);
-
-        await SyncGuestSessionAsync(normalizedEmail);
-
-        TempData["Success"] = "Xác thực email thành công! Chào mừng bạn đến với QueueLink.";
+        TempData["Success"] = "Xác nhận email thành công! Chào mừng bạn đến với QueueLink.";
         return RedirectToAction("Index", "Home");
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ResendOtp(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            return RedirectToAction(nameof(Register));
+    // ── Helpers ────────────────────────────────────────────────────────
 
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        var user = await _userManager.FindByEmailAsync(normalizedEmail);
-        if (user == null)
-        {
-            TempData["Error"] = "Email chưa được đăng ký.";
-            return RedirectToAction(nameof(Register));
-        }
-
-        try
-        {
-            await _otp.ResendAsync(normalizedEmail, user.FullName ?? "");
-            TempData["Info"] = $"Đã gửi lại mã OTP tới {normalizedEmail}.";
-        }
-        catch (InvalidOperationException ex)
-        {
-            TempData["Error"] = ex.Message;
-        }
-
-        return RedirectToAction(nameof(VerifyOtp), new { email = normalizedEmail });
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Lưu thông tin guest vào session để auto-fill form lấy số ở những lần sau.
-    /// </summary>
     private async Task SyncGuestSessionAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -277,4 +229,11 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         return RedirectToAction("Index", "Home");
     }
+}
+
+public class MagicLinkLoginViewModel
+{
+    [Required(ErrorMessage = "Vui lòng nhập email")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string Email { get; set; } = string.Empty;
 }

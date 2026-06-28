@@ -28,6 +28,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IDataPro
         builder.Entity<ApplicationUser>(e =>
         {
             e.HasIndex(u => u.NormalizedEmail).IsUnique();
+            e.HasIndex(u => u.SupabaseId);
         });
 
         builder.Entity<Venue>(e =>
