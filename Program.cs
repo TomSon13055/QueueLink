@@ -106,7 +106,9 @@ builder.Services.AddScoped<IGuestSession, GuestSession>();
 
 // ── Email integration ────────────────────────────────────────────────
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
-var emailProvider = builder.Configuration.GetValue<string>("Email:Provider") ?? "Gmail";
+var emailProvider = builder.Configuration.GetValue<string>("Email__Provider")
+                     ?? builder.Configuration.GetValue<string>("Email:Provider")
+                     ?? "Gmail";
 if (emailProvider.Equals("Resend", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddScoped<IEmailSender, ResendSender>();

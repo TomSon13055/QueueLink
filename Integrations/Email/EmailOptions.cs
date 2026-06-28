@@ -63,4 +63,5 @@ public class BrevoOptions
 
     public string ApiKey { get; set; } = string.Empty;
     public string SenderName { get; set; } = "QueueLink";
+    public string SenderEmail { get; set; } = "noreply@brevo.com";
 }

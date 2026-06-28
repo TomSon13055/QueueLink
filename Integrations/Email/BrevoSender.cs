@@ -41,7 +41,7 @@ public class BrevoSender : IEmailSender
 
         var payload = new
         {
-            sender = new { name = _options.Brevo.SenderName, email = "noreply@brevo.com" },
+            sender = new { name = _options.Brevo.SenderName, email = _options.Brevo.SenderEmail },
             to = new[] { new { email = to } },
             subject,
             htmlContent = isHtml ? body : $"<p>{body}</p>",
