@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using QueueLink.Data;
 using QueueLink.Models;
 
@@ -25,18 +26,17 @@ public static class SeedData
         {
             await db.Database.MigrateAsync();
         }
-        catch (Exception ex) when (IsRelationAlreadyExists(ex))
+        catch (Exception ex)
         {
-            // DB already has tables — just record the latest migration and add
-            // any columns that the migration would have added to existing tables.
-            await EnsureMigrationRecordedAsync(db);
-        }
-        catch (Exception ex) when (IsMissingColumn(ex))
-        {
-            // Some columns are missing from existing tables (e.g. CloseTime, OpenTime,
-            // Slug, OwnerId on Venues).  Run raw SQL to add them and then record the migration.
-            await AddMissingColumnsAsync(db);
-            await EnsureMigrationRecordedAsync(db);
+            var pg = GetPgException(ex);
+            if (pg == null) throw;
+            // Railway: DB has old tables — fix missing columns and record migration.
+            if (pg.SqlState == "42P07" || pg.SqlState == "42703")
+            {
+                await AddMissingColumnsAsync(db);
+                await EnsureMigrationRecordedAsync(db);
+            }
+            else throw;
         }
 
         // ── Roles ─────────────────────────────────────────────────────
@@ -186,18 +186,14 @@ public static class SeedData
         await db.SaveChangesAsync();
     }
 
-    private static bool IsRelationAlreadyExists(Exception ex)
+    private static Npgsql.PostgresException? GetPgException(Exception? ex)
     {
-        var pg = ex as Npgsql.PostgresException
-            ?? ex.InnerException as Npgsql.PostgresException;
-        return pg?.SqlState == "42P07";
-    }
-
-    private static bool IsMissingColumn(Exception ex)
-    {
-        var pg = ex as Npgsql.PostgresException
-            ?? ex.InnerException as Npgsql.PostgresException;
-        return pg?.SqlState == "42703"; // column does not exist
+        while (ex != null)
+        {
+            if (ex is Npgsql.PostgresException pg) return pg;
+            ex = ex.InnerException;
+        }
+        return null;
     }
 
     private static async Task AddMissingColumnsAsync(ApplicationDbContext db)
