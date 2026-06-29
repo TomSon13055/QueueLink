@@ -35,7 +35,7 @@ public class StaffController : Controller
     public async Task<IActionResult> FloorPlan(int? venueId)
     {
         int? vid = venueId ?? await GetAssignedVenueId();
-        if (vid == null) return RedirectToAction("Owner", "SelectVenue");
+        if (vid == null) return RedirectToAction("SelectVenue", "Owner");
 
         var venue = await _db.Venues.FindAsync(vid.Value);
         if (venue == null) return NotFound();
@@ -417,7 +417,7 @@ public class StaffController : Controller
     public async Task<IActionResult> Reservations(int? venueId)
     {
         int? vid = venueId ?? await GetAssignedVenueId();
-        if (vid == null) return RedirectToAction("Owner", "SelectVenue");
+        if (vid == null) return RedirectToAction("SelectVenue", "Owner");
 
         var venue = await _db.Venues.FindAsync(vid.Value);
         if (venue == null) return NotFound();
