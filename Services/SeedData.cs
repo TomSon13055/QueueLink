@@ -9,25 +9,33 @@ public static class SeedData
 {
     // Hardcoded: must match the latest migration class name.
     // Update this if you add/rename migrations.
-    private const string CurrentMigrationName = "InitialCreate";
+    private const string CurrentMigrationName = "RestaurantModule";
 
     public static async Task InitializeAsync(
         ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
-        // Attempt to apply pending migrations.
-        // If the database already has tables from a previous deployment
-        // (e.g. migration name changed between deploys), MigrateAsync()
-        // throws "relation already exists".  In that case we record the
-        // current migration in __EFMigrationsHistory so EF Core treats it
-        // as already applied and the app starts normally.
+        // Apply pending migrations.
+        // On Railway (DATABASE_URL set), the DB may already have tables from a
+        // previous deploy and __EFMigrationsHistory is wrong.  If MigrateAsync()
+        // partially succeeds but then hits a column-not-found error, we fall back to
+        // running raw SQL to add only the missing columns.
         try
         {
             await db.Database.MigrateAsync();
         }
         catch (Exception ex) when (IsRelationAlreadyExists(ex))
         {
+            // DB already has tables — just record the latest migration and add
+            // any columns that the migration would have added to existing tables.
+            await EnsureMigrationRecordedAsync(db);
+        }
+        catch (Exception ex) when (IsMissingColumn(ex))
+        {
+            // Some columns are missing from existing tables (e.g. CloseTime, OpenTime,
+            // Slug, OwnerId on Venues).  Run raw SQL to add them and then record the migration.
+            await AddMissingColumnsAsync(db);
             await EnsureMigrationRecordedAsync(db);
         }
 
@@ -183,6 +191,24 @@ public static class SeedData
         var pg = ex as Npgsql.PostgresException
             ?? ex.InnerException as Npgsql.PostgresException;
         return pg?.SqlState == "42P07";
+    }
+
+    private static bool IsMissingColumn(Exception ex)
+    {
+        var pg = ex as Npgsql.PostgresException
+            ?? ex.InnerException as Npgsql.PostgresException;
+        return pg?.SqlState == "42703"; // column does not exist
+    }
+
+    private static async Task AddMissingColumnsAsync(ApplicationDbContext db)
+    {
+        // Add columns that RestaurantModule adds to existing Venues table
+        await db.Database.ExecuteSqlRawAsync(@"
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""CloseTime"" time without time zone NOT NULL DEFAULT '00:00:00';
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""OpenTime"" time without time zone NOT NULL DEFAULT '00:00:00';
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""OwnerId"" character varying(450);
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""Slug"" character varying(200);
+        ");
     }
 
     /// <summary>
