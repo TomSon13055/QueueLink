@@ -1,0 +1,126 @@
+@model IEnumerable<QueueLink.Models.MenuCategory>
+@{
+    ViewData["Title"] = "Quản lý Menu — " + ViewBag.VenueName;
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a asp-controller="Owner" asp-action="Dashboard" asp-route-venueId="@ViewBag.VenueId" class="btn btn-link text-decoration-none p-0 mb-2">
+                <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+            </a>
+            <h4 class="fw-bold mb-0"><i class="bi bi-menu-button me-2 text-primary"></i>Quản lý Menu — @ViewBag.VenueName</h4>
+        </div>
+        <div>
+            <form asp-controller="Owner" asp-action="CategoryCreate" asp-route-venueId="@ViewBag.VenueId" method="get" class="d-inline">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-folder-plus me-1"></i>Thêm danh mục
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-menu-button-wide fs-1 d-block mb-3"></i>
+            Chưa có danh mục nào. <a asp-controller="Owner" asp-action="CategoryCreate" asp-route-venueId="@ViewBag.VenueId">Thêm danh mục đầu tiên</a>.
+        </div>
+    }
+
+    @foreach (var cat in Model)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-folder me-2 text-warning"></i>@cat.Name</h5>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Owner" asp-action="MenuItemCreate"
+                       asp-route-venueId="@ViewBag.VenueId" asp-route-categoryId="@cat.Id"
+                       class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-lg me-1"></i>Thêm món
+                    </a>
+                    <form asp-controller="Owner" asp-action="CategoryDelete"
+                          asp-route-id="@cat.Id" asp-route-venueId="@ViewBag.VenueId"
+                          method="post" onsubmit="return confirm('Xóa danh mục @cat.Name và tất cả món trong danh mục?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tên món</th>
+                                <th>Mô tả</th>
+                                <th>Giá</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!cat.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">Chưa có món nào trong danh mục này.</td>
+                                </tr>
+                            }
+                            @foreach (var item in cat.Items)
+                            {
+                                <tr class="@(item.IsAvailable ? "" : "opacity-50")">
+                                    <td class="fw-semibold">@item.Name</td>
+                                    <td class="small text-muted">@(item.Description ?? "—")</td>
+                                    <td class="fw-bold text-success">@item.Price.ToString("N0")đ</td>
+                                    <td>
+                                        @if (item.IsAvailable)
+                                        {
+                                            <span class="badge bg-success">Còn món</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Hết món</span>
+                                        }
+                                        @if (!item.IsActive)
+                                        {
+                                            <span class="badge bg-dark ms-1">Ẩn</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <form asp-controller="Owner" asp-action="ToggleMenuItemAvailability"
+                                              asp-route-id="@item.Id" asp-route-venueId="@ViewBag.VenueId"
+                                              method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm @(item.IsAvailable ? "btn-outline-warning" : "btn-outline-success")"
+                                                    title="@(item.IsAvailable ? "Hết món" : "Còn món")">
+                                                <i class="bi @(item.IsAvailable ? "bi-x-circle" : "bi-check-circle")"></i>
+                                            </button>
+                                        </form>
+                                        <a asp-controller="Owner" asp-action="MenuItemEdit" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-controller="Owner" asp-action="MenuItemDelete"
+                                              asp-route-id="@item.Id" asp-route-venueId="@ViewBag.VenueId"
+                                              method="post" class="d-inline"
+                                              onsubmit="return confirm('Xóa @item.Name?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

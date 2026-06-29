@@ -1,0 +1,48 @@
+@model QueueLink.ViewModels.TableFormViewModel
+@{
+    ViewData["Title"] = "Thêm bàn";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <a asp-action="Tables" asp-route-venueId="@ViewBag.VenueId" class="btn btn-link text-decoration-none mb-3">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Thêm bàn mới</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="VenueId" />
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold"></label>
+                            <input asp-for="Name" class="form-control" placeholder="VD: Bàn 1, Bàn 2..." />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Capacity" class="form-label fw-semibold"></label>
+                            <input asp-for="Capacity" class="form-control" type="number" min="1" />
+                            <span asp-validation-for="Capacity" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="SortOrder" class="form-label fw-semibold"></label>
+                            <input asp-for="SortOrder" class="form-control" type="number" />
+                        </div>
+                        <div class="form-check mb-4">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+                        <a asp-action="Tables" asp-route-venueId="@ViewBag.VenueId" class="btn btn-outline-secondary">Hủy</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

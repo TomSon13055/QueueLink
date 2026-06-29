@@ -1,0 +1,156 @@
+@model IEnumerable<QueueLink.Models.Table>
+@{
+    ViewData["Title"] = "Sơ đồ bàn — " + ViewBag.VenueName;
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-4">
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>@ViewBag.VenueName — Sơ đồ bàn</h4>
+        </div>
+        @if (ViewBag.IsAdmin == true)
+        {
+            <div>
+                <a asp-controller="Owner" asp-action="SelectVenue" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-1"></i>Đổi quán
+                </a>
+                <a asp-controller="Owner" asp-action="Dashboard" asp-route-venueId="@ViewBag.VenueId" class="btn btn-primary">
+                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                </a>
+            </div>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @* Table cards *@
+    <div class="row g-3">
+        @foreach (var t in Model)
+        {
+            var reservation = t.Reservations.FirstOrDefault();
+            var activeOrder = t.Orders.FirstOrDefault();
+            <div class="col-md-3 col-sm-4 col-lg-2">
+                @{
+                    var cardClass = t.Status switch
+                    {
+                        QueueLink.Models.TableStatus.Available => "border-success border-2",
+                        QueueLink.Models.TableStatus.Reserved => "border-warning border-2",
+                        QueueLink.Models.TableStatus.Occupied => "border-danger border-2",
+                        _ => "border-secondary"
+                    };
+                }
+                <div class="card @cardClass h-100 shadow-sm">
+                    <div class="card-header py-2 text-center fw-bold">
+                        @t.Name
+                        @if (t.Status == QueueLink.Models.TableStatus.Available)
+                        {
+                            <span class="badge bg-success float-end">Trống</span>
+                        }
+                        else if (t.Status == QueueLink.Models.TableStatus.Reserved)
+                        {
+                            <span class="badge bg-warning text-dark float-end">Đặt trước</span>
+                        }
+                        else if (t.Status == QueueLink.Models.TableStatus.Occupied)
+                        {
+                            <span class="badge bg-danger float-end">Có khách</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary float-end">Dọn dẹp</span>
+                        }
+                    </div>
+                    <div class="card-body text-center py-3 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="fs-3 mb-1">
+                                @if (t.Status == QueueLink.Models.TableStatus.Available)
+                                { <span>🪑</span> }
+                                else if (t.Status == QueueLink.Models.TableStatus.Reserved)
+                                { <span>📅</span> }
+                                else if (t.Status == QueueLink.Models.TableStatus.Occupied)
+                                { <span>🍽️</span> }
+                                else
+                                { <span>🧹</span> }
+                            </div>
+                            <div class="small text-muted">@t.Capacity người</div>
+
+                            @if (reservation != null)
+                            {
+                                <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded">
+                                    <div class="small fw-bold">@reservation.CustomerName</div>
+                                    <div class="small text-muted">@reservation.CustomerPhone</div>
+                                    <div class="small">
+                                        <i class="bi bi-people me-1"></i>@reservation.PartySize người
+                                        <i class="bi bi-clock ms-1 me-1"></i>@reservation.ReservationTime.ToString("HH:mm")
+                                    </div>
+                                </div>
+                            }
+
+                            @if (activeOrder != null)
+                            {
+                                <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded">
+                                    <div class="small fw-bold">@activeOrder.OrderCode</div>
+                                    <div class="small text-success fw-semibold">@activeOrder.TotalAmount.ToString("N0")đ</div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mt-2 d-grid gap-1">
+                            @if (t.Status == QueueLink.Models.TableStatus.Available)
+                            {
+                                <a asp-action="SeatTable" asp-route-tableId="@t.Id" class="btn btn-sm btn-success">
+                                    <i class="bi bi-person-plus me-1"></i>Xếp khách
+                                </a>
+                            }
+                            else if (t.Status == QueueLink.Models.TableStatus.Reserved && reservation != null)
+                            {
+                                <a asp-action="SeatTable" asp-route-tableId="@t.Id" asp-route-reservationId="@reservation.Id"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i>Xếp bàn
+                                </a>
+                            }
+                            else if (t.Status == QueueLink.Models.TableStatus.Occupied && activeOrder != null)
+                            {
+                                <a asp-action="OrderItems" asp-route-orderId="@activeOrder.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-list-ul me-1"></i>Gọi món
+                                </a>
+                                <a asp-action="Payment" asp-route-orderId="@activeOrder.Id"
+                                   class="btn btn-sm btn-warning">
+                                    <i class="bi bi-currency-dollar me-1"></i>Thanh toán
+                                </a>
+                            }
+                            else if (t.Status == QueueLink.Models.TableStatus.Occupied)
+                            {
+                                <a asp-action="OpenNewOrder" asp-route-tableId="@t.Id" class="btn btn-sm btn-success">
+                                    <i class="bi bi-plus-lg me-1"></i>Mở đơn
+                                </a>
+                            }
+
+                            @if (t.Status == QueueLink.Models.TableStatus.Occupied)
+                            {
+                                <form asp-action="MarkTableAvailable" asp-route-tableId="@t.Id" method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100 mt-1">
+                                        <i class="bi bi-x-circle me-1"></i>Trả bàn
+                                    </button>
+                                </form>
+                            }
+                            else if (t.Status == QueueLink.Models.TableStatus.Cleaning)
+                            {
+                                <form asp-action="MarkTableAvailable" asp-route-tableId="@t.Id" method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                                        <i class="bi bi-check-lg me-1"></i>Bàn sạch
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

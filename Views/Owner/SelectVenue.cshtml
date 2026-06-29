@@ -1,0 +1,32 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Chọn quán để quản lý";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <h2 class="mb-4 fw-bold"><i class="bi bi-shop me-2"></i>Chọn quán quản lý</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">Chưa có quán nào. Liên hệ Admin để tạo.</div>
+    }
+
+    <div class="row g-4">
+        @foreach (var v in Model)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">@v.Name</h5>
+                        <p class="text-muted small mb-2"><i class="bi bi-geo-alt me-1"></i>@v.Address</p>
+                        <a asp-controller="Owner" asp-action="Dashboard" asp-route-venueId="@v.Id"
+                           class="btn btn-primary w-100">
+                            <i class="bi bi-speedometer2 me-1"></i>Vào quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

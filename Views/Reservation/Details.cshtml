@@ -1,0 +1,68 @@
+@model QueueLink.Models.Reservation
+@{
+    ViewData["Title"] = "Chi tiết đặt trước";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Chi tiết đặt trước</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted">Mã đặt trước</td>
+                            <td class="fw-bold">@Model.ReservationCode</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Bàn</td>
+                            <td class="fw-bold">@Model.Table?.Name</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Khách hàng</td>
+                            <td>@Model.CustomerName</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Số điện thoại</td>
+                            <td>@Model.CustomerPhone</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Số khách</td>
+                            <td>@Model.PartySize người</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Giờ đặt</td>
+                            <td>@Model.ReservationTime.ToString("HH:mm, dd/MM/yyyy")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Giữ đến</td>
+                            <td class="text-danger fw-bold">@Model.ExpiresAt.ToString("HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Trạng thái</td>
+                            <td>
+                                @if (Model.Status == QueueLink.Models.ReservationStatus.Pending)
+                                { <span class="badge bg-info">Chờ xác nhận</span> }
+                                else if (Model.Status == QueueLink.Models.ReservationStatus.Confirmed)
+                                { <span class="badge bg-warning text-dark">Đã xác nhận</span> }
+                                else if (Model.Status == QueueLink.Models.ReservationStatus.Seated)
+                                { <span class="badge bg-success">Đã ngồi</span> }
+                                else if (Model.Status == QueueLink.Models.ReservationStatus.Cancelled)
+                                { <span class="badge bg-secondary">Đã hủy</span> }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-action="Index" asp-controller="Public" asp-route-slug="@Model.Table?.Venue?.Slug"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-house me-1"></i>Về trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

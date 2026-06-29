@@ -1,0 +1,58 @@
+@model QueueLink.Models.Reservation
+@{
+    ViewData["Title"] = "Đặt trước thành công";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <div class="text-success mb-3">
+            <i class="bi bi-check-circle-fill" style="font-size: 5rem;"></i>
+        </div>
+        <h2 class="fw-bold text-success">Đặt trước thành công!</h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow border-success">
+                <div class="card-body p-4">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Mã đặt trước</td>
+                            <td class="fw-bold text-primary fs-5">@ViewBag.ReservationCode</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Bàn</td>
+                            <td class="fw-bold">@ViewBag.TableName</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Giờ đặt</td>
+                            <td class="fw-bold">@(((DateTime)ViewBag.ReservationTime).ToString("HH:mm, dd/MM/yyyy"))</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Giữ đến</td>
+                            <td class="fw-bold text-danger">@(((DateTime)ViewBag.ExpiresAt).ToString("HH:mm"))</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Thời gian giữ</td>
+                            <td>@ViewBag.HoldMinutes phút</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Vui lòng đến trước <strong>@(((DateTime)ViewBag.ExpiresAt).ToString("HH:mm"))</strong>.
+                Nếu đến sau, bàn sẽ được nhả cho người khác.
+            </div>
+
+            <div class="text-center mt-4">
+                <a asp-action="Index" asp-controller="Public" asp-route-slug="@Model.Table?.Venue?.Slug"
+                   class="btn btn-outline-primary">
+                    <i class="bi bi-house me-1"></i>Về trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

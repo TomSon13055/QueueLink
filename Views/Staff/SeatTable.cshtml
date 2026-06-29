@@ -1,0 +1,78 @@
+@model QueueLink.ViewModels.SeatTableViewModel
+@{
+    ViewData["Title"] = "Xếp bàn — " + Model.TableName;
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <a asp-action="FloorPlan" asp-route-venueId="@Model.VenueId" class="btn btn-link text-decoration-none mb-3">
+        <i class="bi bi-arrow-left"></i> Quay lại sơ đồ bàn
+    </a>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-check2-circle me-2"></i>Xếp khách vào @Model.TableName</h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.ReservationCode))
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Đặt trước: <strong>@Model.ReservationCode</strong>
+                            — @Model.CustomerName, @Model.PartySize người
+                        </div>
+                    }
+
+                    <form method="post" asp-action="SeatTable">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="TableId" />
+                        <input type="hidden" asp-for="VenueId" />
+                        <input type="hidden" asp-for="ReservationId" />
+                        <input type="hidden" asp-for="CustomerName" />
+                        <input type="hidden" asp-for="CustomerPhone" />
+                        <input type="hidden" asp-for="PartySize" />
+                        <input type="hidden" asp-for="Notes" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Bàn</label>
+                            <input class="form-control" value="@Model.TableName — @Model.VenueName" readonly />
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.CustomerName))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Khách hàng</label>
+                                <input class="form-control" value="@Model.CustomerName (@Model.CustomerPhone)" readonly />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Số khách</label>
+                                <input class="form-control" value="@Model.PartySize người" readonly />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Họ tên khách</label>
+                                <input class="form-control" placeholder="Nhập tên khách..." />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Số điện thoại</label>
+                                <input class="form-control" placeholder="Nhập SĐT..." />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Số khách</label>
+                                <input type="number" class="form-control" value="@Model.PartySize" min="1" />
+                            </div>
+                        }
+
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-lg me-1"></i>Xếp bàn
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

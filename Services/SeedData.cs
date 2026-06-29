@@ -54,6 +54,10 @@ public static class SeedData
             Description = "Nhà hàng buffet Hàn Quốc nổi tiếng tại Vincom Center",
             Address = "Vincom Center, Quận 1, TP.HCM",
             Phone = "0900000001",
+            Slug = "dookki-vincom",
+            OwnerId = admin?.Id,
+            OpenTime = new TimeOnly(11, 0),
+            CloseTime = new TimeOnly(22, 0),
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -63,6 +67,10 @@ public static class SeedData
             Description = "Photobooth kỷ niệm tại Shopping Mall",
             Address = "Shopping Mall Floor 2, Quận 7, TP.HCM",
             Phone = "0900000002",
+            Slug = "photobooth-mall",
+            OwnerId = admin?.Id,
+            OpenTime = new TimeOnly(9, 0),
+            CloseTime = new TimeOnly(21, 0),
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -72,11 +80,62 @@ public static class SeedData
             Description = "Food court đa dạng tại Safari Park",
             Address = "Safari Park, Quận 9, TP.HCM",
             Phone = "0900000003",
+            Slug = "safari-foodcourt",
+            OwnerId = admin?.Id,
+            OpenTime = new TimeOnly(10, 0),
+            CloseTime = new TimeOnly(20, 0),
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
         db.Venues.AddRange(v1, v2, v3);
+        await db.SaveChangesAsync();
+
+        // ── Tables ──────────────────────────────────────────────────────
+        var tables = new[]
+        {
+            new Table { VenueId = v1.Id, Name = "Bàn 1", Capacity = 4, SortOrder = 1, Status = TableStatus.Available },
+            new Table { VenueId = v1.Id, Name = "Bàn 2", Capacity = 4, SortOrder = 2, Status = TableStatus.Available },
+            new Table { VenueId = v1.Id, Name = "Bàn 3", Capacity = 6, SortOrder = 3, Status = TableStatus.Available },
+            new Table { VenueId = v1.Id, Name = "Bàn 4", Capacity = 4, SortOrder = 4, Status = TableStatus.Available },
+            new Table { VenueId = v1.Id, Name = "Bàn 5", Capacity = 6, SortOrder = 5, Status = TableStatus.Available },
+            new Table { VenueId = v1.Id, Name = "Bàn 6", Capacity = 8, SortOrder = 6, Status = TableStatus.Available },
+            new Table { VenueId = v2.Id, Name = "Box 1", Capacity = 4, SortOrder = 1, Status = TableStatus.Available },
+            new Table { VenueId = v2.Id, Name = "Box 2", Capacity = 4, SortOrder = 2, Status = TableStatus.Available },
+            new Table { VenueId = v3.Id, Name = "Quầy 1", Capacity = 2, SortOrder = 1, Status = TableStatus.Available },
+            new Table { VenueId = v3.Id, Name = "Quầy 2", Capacity = 2, SortOrder = 2, Status = TableStatus.Available },
+        };
+        db.Tables.AddRange(tables);
+
+        // ── Menu Categories & Items (Dookki) ─────────────────────────────
+        var catBuffet = new MenuCategory { VenueId = v1.Id, Name = "Buffet", SortOrder = 1 };
+        var catKorean = new MenuCategory { VenueId = v1.Id, Name = "Món Hàn", SortOrder = 2 };
+        var catDrink = new MenuCategory { VenueId = v1.Id, Name = "Đồ uống", SortOrder = 3 };
+        var catDessert = new MenuCategory { VenueId = v1.Id, Name = "Tráng miệng", SortOrder = 4 };
+        db.MenuCategories.AddRange(catBuffet, catKorean, catDrink, catDessert);
+        await db.SaveChangesAsync();
+
+        db.MenuItems.AddRange(
+            new MenuItem { CategoryId = catBuffet.Id, Name = "Buffet Trưa (11:00-14:00)", Description = "Buffet 89k/người", Price = 89000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catBuffet.Id, Name = "Buffet Tối (17:00-22:00)", Description = "Buffet 109k/người", Price = 109000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catKorean.Id, Name = "Tokbokki", Description = "Bánh gối Hàn Quốc", Price = 45000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catKorean.Id, Name = "Kimbap", Description = "Cơm cuộn rong biển", Price = 35000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catKorean.Id, Name = "Gà chiên Hàn", Description = "Gà giòn Cay", Price = 55000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catDrink.Id, Name = "Trà sữa Hàn", Description = "Hương vị Hàn Quốc", Price = 25000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catDrink.Id, Name = "Nước ngọt", Description = "Coca / Sprite", Price = 15000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catDessert.Id, Name = "Bánh gạo hấp", Description = "Tteokbokki ngọt", Price = 30000, IsActive = true, IsAvailable = true },
+            new MenuItem { CategoryId = catDessert.Id, Name = "Kem dừa", Description = "Kem que dừa non", Price = 20000, IsActive = true, IsAvailable = true }
+        );
+
+        // ── VenueStaff (assign staff to venues) ─────────────────────────
+        if (staff != null)
+        {
+            db.VenueStaff.AddRange(
+                new VenueStaff { VenueId = v1.Id, UserId = staff.Id },
+                new VenueStaff { VenueId = v2.Id, UserId = staff.Id }
+            );
+        }
+
         await db.SaveChangesAsync();
 
         // ── Queue Services ─────────────────────────────────────────────

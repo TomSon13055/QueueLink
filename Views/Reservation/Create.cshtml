@@ -1,0 +1,131 @@
+@model QueueLink.Models.Venue
+@{
+    var availableTables = ViewBag.AvailableTables as List<QueueLink.Models.Table> ?? new();
+    var timeSlots = ViewBag.TimeSlots as List<TimeOnly> ?? new();
+    ViewData["Title"] = "Đặt trước — " + Model.Name;
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h3 class="fw-bold"><i class="bi bi-calendar-plus me-2 text-warning"></i>Đặt trước bàn</h3>
+        <p class="text-muted">@Model.Name — @Model.Address</p>
+        <p class="small text-muted">
+            <i class="bi bi-clock me-1"></i>Mở cửa: @Model.OpenTime.ToString("HH:mm") – @Model.CloseTime.ToString("HH:mm")
+        </p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="slug" value="@Model.Slug" />
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Họ tên <span class="text-danger">*</span></label>
+                                <input type="text" name="customerName" class="form-control"
+                                       placeholder="Nhập họ tên của bạn" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" name="customerPhone" class="form-control"
+                                       placeholder="0xxx xxx xxx" required />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Số khách <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            onclick="var v=document.getElementById('partySize'); if(v.value>1)v.value=parseInt(v.value)-1">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" id="partySize" name="partySize" class="form-control text-center"
+                                           value="2" min="1" max="20" required />
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            onclick="var v=document.getElementById('partySize'); v.value=parseInt(v.value)+1">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Ngày đặt <span class="text-danger">*</span></label>
+                                <input type="date" name="reservationDate" class="form-control"
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Giờ đặt <span class="text-danger">*</span></label>
+                                <select name="reservationTime" class="form-select" required>
+                                    @foreach (var slot in timeSlots)
+                                    {
+                                        <option value="@slot.ToTimeSpan()">@slot.ToString("HH:mm")</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        @* Chọn bàn *@
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Chọn bàn (tùy chọn)</label>
+                            @if (availableTables.Any())
+                            {
+                                <div class="row g-2">
+                                    @foreach (var t in availableTables)
+                                    {
+                                        <div class="col-auto">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="tableId"
+                                                       id="table-@t.Id" value="@t.Id"
+                                                       @(t == availableTables.First() ? "checked" : "") />
+                                                <label class="form-check-label" for="table-@t.Id">
+                                                    @t.Name (@t.Capacity người)
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="form-text">Để trống nếu bạn không yêu cầu bàn cụ thể.</div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning mb-0">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Hiện không có bàn trống nào để chọn. Bạn vẫn có thể đặt — chúng tôi sẽ gán bàn phù hợp.
+                                </div>
+                                <input type="hidden" name="tableId" value="@availableTables.FirstOrDefault()?.Id" />
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Ghi chú</label>
+                            <textarea name="notes" class="form-control" rows="2"
+                                      placeholder="VD: ngồi ngoài trời, ghế cao cho bé..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Bàn sẽ được giữ trong <strong>30 phút</strong> kể từ giờ đặt.
+                            Nếu bạn đến trễ, bàn có thể được nhả cho người khác.
+                        </div>
+
+                        <button type="submit" class="btn btn-warning btn-lg w-100">
+                            <i class="bi bi-check-circle me-2"></i>Xác nhận đặt trước
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <a asp-action="Index" asp-controller="Public" asp-route-slug="@Model.Slug"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

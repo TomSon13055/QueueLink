@@ -1,6 +1,6 @@
 @model QueueLink.ViewModels.VenueFormViewModel
 @{
-    ViewData["Title"] = ViewContext.RouteData.Values["action"].ToString() == "Create" ? "Thêm địa điểm" : "Sửa địa điểm";
+    ViewData["Title"] = ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "Thêm địa điểm" : "Sửa địa điểm";
     Layout = "_Layout";
 }
 

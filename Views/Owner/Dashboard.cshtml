@@ -1,0 +1,206 @@
+@model QueueLink.ViewModels.OwnerDashboardViewModel
+@{
+    ViewData["Title"] = Model.VenueName + " — Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-4">
+    @* ── Header ── *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-shop me-2 text-primary"></i>@Model.VenueName</h3>
+            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Đang hoạt động</span>
+        </div>
+        <div class="btn-group">
+            <a asp-controller="Owner" asp-action="Dashboard" asp-route-venueId="@Model.VenueId" class="btn btn-outline-primary active">
+                <i class="bi bi-grid-1x2 me-1"></i>Tổng quan
+            </a>
+            <a asp-controller="Owner" asp-action="Tables" asp-route-venueId="@Model.VenueId" class="btn btn-outline-primary">
+                <i class="bi bi-table me-1"></i>Bàn
+            </a>
+            <a asp-controller="Owner" asp-action="Menu" asp-route-venueId="@Model.VenueId" class="btn btn-outline-primary">
+                <i class="bi bi-menu-button me-1"></i>Menu
+            </a>
+            <a asp-controller="Owner" asp-action="Staff" asp-route-venueId="@Model.VenueId" class="btn btn-outline-primary">
+                <i class="bi bi-people me-1"></i>Nhân viên
+            </a>
+            <a asp-controller="Owner" asp-action="VenueSettings" asp-route-venueId="@Model.VenueId" class="btn btn-outline-primary">
+                <i class="bi bi-gear me-1"></i>Cài đặt
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @* ── TABLES OVERVIEW ── *@
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-table me-2 text-primary"></i>Tình trạng bàn</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bàn</th>
+                                    <th>Sức chứa</th>
+                                    <th>Trạng thái</th>
+                                    <th>Đơn hàng</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in Model.Tables)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@t.Name</td>
+                                        <td>@t.Capacity người</td>
+                                        <td>
+                                            @if (t.Status == QueueLink.Models.TableStatus.Available)
+                                            {
+                                                <span class="badge bg-success">Trống</span>
+                                            }
+                                            else if (t.Status == QueueLink.Models.TableStatus.Reserved)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    Đặt trước
+                                                    @if (t.ActiveReservation != null)
+                                                    {
+                                                        <span>— @t.ActiveReservation.CustomerName</span>
+                                                    }
+                                                </span>
+                                            }
+                                            else if (t.Status == QueueLink.Models.TableStatus.Occupied)
+                                            {
+                                                <span class="badge bg-danger">Có khách</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Dọn dẹp</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (t.ActiveOrder != null)
+                                            {
+                                                <span class="small">@t.ActiveOrder.OrderCode — @t.ActiveOrder.TotalAmount.ToString("N0")đ</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (t.Status == QueueLink.Models.TableStatus.Available)
+                                            {
+                                                <a asp-controller="Staff" asp-action="OpenNewOrder" asp-route-tableId="@t.Id"
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="bi bi-plus-lg me-1"></i>Mở đơn
+                                                </a>
+                                            }
+                                            else if (t.Status == QueueLink.Models.TableStatus.Reserved && t.ActiveReservation != null)
+                                            {
+                                                <a asp-controller="Staff" asp-action="SeatTable"
+                                                   asp-route-tableId="@t.Id" asp-route-reservationId="@t.ActiveReservation.Id"
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-check-lg me-1"></i>Xếp bàn
+                                                </a>
+                                            }
+                                            else if (t.Status == QueueLink.Models.TableStatus.Occupied && t.ActiveOrder != null)
+                                            {
+                                                <a asp-controller="Staff" asp-action="Payment" asp-route-orderId="@t.ActiveOrder.Id"
+                                                   class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-currency-dollar me-1"></i>Thanh toán
+                                                </a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── TODAY'S RESERVATIONS ── *@
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-event me-2 text-warning"></i>Đặt trước hôm nay</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.TodayReservations.Any())
+                    {
+                        <div class="text-center text-muted py-4">Không có đặt trước nào hôm nay.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var r in Model.TodayReservations)
+                            {
+                                var expiresIn = r.ExpiresAt - DateTime.UtcNow;
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold">@r.CustomerName — @r.TableName</div>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-people me-1"></i>@r.PartySize người
+                                            <i class="bi bi-clock ms-2 me-1"></i>@r.ReservationTime.ToString("HH:mm")
+                                            <span class="badge bg-secondary ms-1">@r.ReservationCode</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        @if (r.Status == QueueLink.Models.ReservationStatus.Pending)
+                                        {
+                                            <span class="badge bg-info text-dark">Chờ xác nhận</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                Còn @(expiresIn.TotalMinutes > 0 ? $"{(int)expiresIn.TotalMinutes} phút" : "hết giờ")
+                                            </span>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── QUEUE SUMMARY ── *@
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-list-ol me-2 text-info"></i>Hàng đợi hôm nay</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.QueueSummary.Any())
+                    {
+                        <div class="text-center text-muted py-4">Không có hàng đợi nào.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var q in Model.QueueSummary)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">@q.QueueServiceName</div>
+                                        <span class="badge @(q.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : "bg-secondary")">
+                                            @(q.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Đang mở" : "Tạm dừng")
+                                        </span>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fs-4 fw-bold text-primary">@q.WaitingCount</span>
+                                        <span class="small text-muted">đang chờ</span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+@model QueueLink.ViewModels.MenuItemFormViewModel
+@{
+    ViewData["Title"] = (Model.Id == 0 ? "Thêm món" : "Sửa món") + " — " + ViewBag.CategoryName;
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <a asp-controller="Owner" asp-action="Menu" asp-route-venueId="@ViewBag.VenueId" class="btn btn-link text-decoration-none mb-3">
+        <i class="bi bi-arrow-left"></i> Quay lại Menu
+    </a>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi @(Model.Id == 0 ? "bi-plus-circle" : "bi-pencil") me-2"></i>@(Model.Id == 0 ? "Thêm món" : "Sửa món") — @ViewBag.CategoryName</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-controller="Owner" asp-action="@(Model.Id == 0 ? "MenuItemCreate" : "MenuItemEdit")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="VenueId" />
+                        <input type="hidden" asp-for="CategoryId" />
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Price" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <input asp-for="Price" class="form-control" type="number" min="0" step="1000" />
+                                <span class="input-group-text">VND</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ImageUrl" class="form-label fw-semibold"></label>
+                            <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="SortOrder" class="form-label fw-semibold"></label>
+                            <input asp-for="SortOrder" class="form-control" type="number" />
+                        </div>
+                        <div class="form-check mb-4">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label">Hiển thị món</label>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input asp-for="IsAvailable" class="form-check-input" />
+                            <label asp-for="IsAvailable" class="form-check-label">Còn món (sẵn sàng phục vụ)</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

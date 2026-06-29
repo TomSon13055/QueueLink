@@ -1,0 +1,64 @@
+@model QueueLink.Models.QueueTicket
+@{
+    var waitingAhead = ViewBag.WaitingAhead as int? ?? 0;
+    var currentlyServing = ViewBag.CurrentlyServing as QueueLink.Models.QueueTicket;
+    ViewData["Title"] = "Số của bạn — " + Model.TicketCode;
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <h3 class="fw-bold">Số của bạn</h3>
+        <div class="display-1 fw-bold text-primary my-3">@Model.TicketCode</div>
+        <div class="fw-semibold">@Model.CustomerName</div>
+        <div class="text-muted small">@Model.QueueService?.Name — @Model.QueueService?.Venue?.Name</div>
+    </div>
+
+    @if (Model.Status == QueueLink.Models.TicketStatus.Waiting)
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="alert alert-warning text-center fs-5">
+                    <div class="fw-bold">Bạn còn <span class="display-6">@waitingAhead</span> người trước bạn.</div>
+                </div>
+                @if (currentlyServing != null)
+                {
+                    <div class="alert alert-light text-center">
+                        <div class="small text-muted">Đang phục vụ</div>
+                        <div class="fw-bold fs-5">@currentlyServing.TicketCode — @currentlyServing.CustomerName</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (Model.Status == QueueLink.Models.TicketStatus.Called)
+    {
+        <div class="alert alert-danger text-center fs-3">
+            <i class="bi bi-bell-fill me-2"></i>
+            <strong>ĐẾN LƯỢT BẠN RỒI!</strong>
+        </div>
+    }
+    else if (Model.Status == QueueLink.Models.TicketStatus.Serving)
+    {
+        <div class="alert alert-success text-center fs-5">
+            <i class="bi bi-check-circle me-2"></i>Bạn đang được phục vụ.
+        </div>
+    }
+    else if (Model.Status == QueueLink.Models.TicketStatus.NoShow)
+    {
+        <div class="alert alert-secondary text-center">Bạn không đến đúng giờ.</div>
+    }
+
+    <div class="text-center mt-4">
+        <button class="btn btn-outline-primary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Cập nhật
+        </button>
+    </div>
+
+    <div class="text-center mt-2">
+        <a asp-action="Index" asp-controller="Public" asp-route-slug="@Model.QueueService?.Venue?.Slug"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-house me-1"></i>Về trang chủ
+        </a>
+    </div>
+</div>

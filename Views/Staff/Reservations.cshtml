@@ -1,0 +1,124 @@
+@model IEnumerable<QueueLink.Models.Reservation>
+@{
+    ViewData["Title"] = "Quản lý đặt trước — " + ViewBag.VenueName;
+    Layout = "_Layout";
+    var now = DateTime.UtcNow;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a asp-controller="Staff" asp-action="FloorPlan" asp-route-venueId="@ViewBag.VenueId"
+               class="btn btn-link text-decoration-none p-0 mb-2">
+                <i class="bi bi-arrow-left"></i> Quay lại sơ đồ bàn
+            </a>
+            <h4 class="fw-bold mb-0"><i class="bi bi-calendar-event me-2 text-warning"></i>Đặt trước — @ViewBag.VenueName</h4>
+        </div>
+        <a asp-controller="Staff" asp-action="FloorPlan" asp-route-venueId="@ViewBag.VenueId" class="btn btn-primary">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Sơ đồ bàn
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+            Hôm nay không có đặt trước nào.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã</th>
+                            <th>Khách hàng</th>
+                            <th>Bàn</th>
+                            <th>Giờ đặt</th>
+                            <th>Giữ đến</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            var expiresIn = r.ExpiresAt - now;
+                            <tr class="@(r.ExpiresAt < now && r.Status == QueueLink.Models.ReservationStatus.Confirmed ? "table-danger" : "")">
+                                <td><span class="badge bg-secondary">@r.ReservationCode</span></td>
+                                <td>
+                                    <div class="fw-semibold">@r.CustomerName</div>
+                                    <div class="small text-muted">@r.CustomerPhone</div>
+                                    <div class="small"><i class="bi bi-people me-1"></i>@r.PartySize người</div>
+                                </td>
+                                <td class="fw-semibold">@r.Table?.Name</td>
+                                <td>@r.ReservationTime.ToString("HH:mm")</td>
+                                <td>
+                                    @r.ExpiresAt.ToString("HH:mm")
+                                    @if (expiresIn.TotalMinutes > 0)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">
+                                            Còn @(expiresIn.TotalMinutes > 60 ? $"{(int)expiresIn.TotalHours} giờ {(int)(expiresIn.TotalMinutes % 60)} phút" : $"{(int)expiresIn.TotalMinutes} phút")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger ms-1">Đã quá giờ</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (r.Status == QueueLink.Models.ReservationStatus.Pending)
+                                    {
+                                        <span class="badge bg-info text-dark">Chờ xác nhận</span>
+                                    }
+                                    else if (r.Status == QueueLink.Models.ReservationStatus.Confirmed)
+                                    {
+                                        <span class="badge bg-warning text-dark">Đã xác nhận</span>
+                                    }
+                                    else if (r.Status == QueueLink.Models.ReservationStatus.Seated)
+                                    {
+                                        <span class="badge bg-success">Đã ngồi</span>
+                                    }
+                                    else if (r.Status == QueueLink.Models.ReservationStatus.Cancelled)
+                                    {
+                                        <span class="badge bg-secondary">Đã hủy</span>
+                                    }
+                                    else if (r.Status == QueueLink.Models.ReservationStatus.NoShow)
+                                    {
+                                        <span class="badge bg-dark">Không đến</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (r.Status == QueueLink.Models.ReservationStatus.Pending)
+                                    {
+                                        <form asp-action="ConfirmReservation" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="bi bi-check-lg me-1"></i>Xác nhận
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (r.Status == QueueLink.Models.ReservationStatus.Confirmed || r.Status == QueueLink.Models.ReservationStatus.Pending)
+                                    {
+                                        <form asp-action="CancelReservation" method="post" class="d-inline"
+                                              onsubmit="return confirm('Hủy đặt trước @r.CustomerName?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-lg me-1"></i>Hủy
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

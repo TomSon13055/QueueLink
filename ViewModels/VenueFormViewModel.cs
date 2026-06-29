@@ -30,6 +30,16 @@ public class VenueFormViewModel
     [Display(Name = "Logo URL")]
     public string? LogoUrl { get; set; }
 
+    [StringLength(200)]
+    [Display(Name = "Slug (URL công khai)")]
+    public string? Slug { get; set; }
+
+    [Display(Name = "Giờ mở cửa")]
+    public TimeOnly OpenTime { get; set; } = new(11, 0);
+
+    [Display(Name = "Giờ đóng cửa")]
+    public TimeOnly CloseTime { get; set; } = new(22, 0);
+
     [Display(Name = "Đang hoạt động")]
     public bool IsActive { get; set; } = true;
 }
