@@ -102,6 +102,7 @@ public class OwnerController : Controller
                 QueueServiceId = q.Id,
                 VenueId = venueId,
                 VenueName = venue.Name,
+                VenueSlug = venue.Slug,
                 VenueLogoUrl = venue.LogoUrl,
                 VenueCoverImageUrl = venue.CoverImageUrl,
                 VenueAddress = venue.Address,

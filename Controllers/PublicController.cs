@@ -18,6 +18,22 @@ public class PublicVenueViewModel
     public List<PublicQueueViewModel> Queues { get; set; } = new();
 }
 
+public class PublicVenueCardViewModel
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string? LogoUrl { get; set; }
+    public string? CoverImageUrl { get; set; }
+    public string? Description { get; set; }
+    public TimeOnly OpenTime { get; set; }
+    public TimeOnly CloseTime { get; set; }
+    public int AvailableTableCount { get; set; }
+    public int TotalTableCount { get; set; }
+    public int OpenQueueCount { get; set; }
+}
+
 public class PublicTableViewModel
 {
     public int Id { get; set; }
@@ -45,6 +61,34 @@ public class PublicController : Controller
     public PublicController(ApplicationDbContext db)
     {
         _db = db;
+    }
+
+    // GET: /Venues — Browse all active venues
+    public async Task<IActionResult> Browse()
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var venues = await _db.Venues
+            .Where(v => v.IsActive)
+            .OrderBy(v => v.Name)
+            .Select(v => new PublicVenueCardViewModel
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Slug = v.Slug ?? "",
+                Address = v.Address,
+                LogoUrl = v.LogoUrl,
+                CoverImageUrl = v.CoverImageUrl,
+                Description = v.Description,
+                OpenTime = v.OpenTime,
+                CloseTime = v.CloseTime,
+                AvailableTableCount = _db.Tables.Count(t => t.VenueId == v.Id && t.IsActive && t.Status == TableStatus.Available),
+                TotalTableCount = _db.Tables.Count(t => t.VenueId == v.Id && t.IsActive),
+                OpenQueueCount = _db.QueueServices.Count(q => q.VenueId == v.Id && q.IsActive && q.QueueStatus == QueueStatus.Open)
+            })
+            .ToListAsync();
+
+        return View(venues);
     }
 
     public async Task<IActionResult> Index(string slug)

@@ -153,6 +153,16 @@ app.UseAuthorization();
 
 // ── Routes ──────────────────────────────────────────────────────────
 app.MapControllerRoute(
+    name: "venueDetail",
+    pattern: "venue/{slug}",
+    defaults: new { controller = "Public", action = "Index" });
+
+app.MapControllerRoute(
+    name: "venues",
+    pattern: "venues",
+    defaults: new { controller = "Public", action = "Browse" });
+
+app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();

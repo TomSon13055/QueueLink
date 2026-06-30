@@ -7,6 +7,7 @@ public class QueueCardViewModel
     public int QueueServiceId { get; set; }
     public int VenueId { get; set; }
     public string VenueName { get; set; } = string.Empty;
+    public string? VenueSlug { get; set; }
     public string? VenueLogoUrl { get; set; }
     public string? VenueCoverImageUrl { get; set; }
     public string? VenueAddress { get; set; }

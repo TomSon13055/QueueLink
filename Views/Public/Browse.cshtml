@@ -1,0 +1,155 @@
+@model IEnumerable<QueueLink.Controllers.PublicVenueCardViewModel>
+@{
+    ViewData["Title"] = "Khám phá địa điểm";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <h1 class="fw-bold"><i class="bi bi-shop text-primary me-2"></i>Khám phá địa điểm</h1>
+        <p class="text-muted">Chọn quán để xem chi tiết, đặt trước hoặc lấy số chờ</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <h5>Chưa có địa điểm nào.</h5>
+            <p class="text-muted">Vui lòng quay lại sau.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var v in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <a asp-controller="Public" asp-action="Index" asp-route-slug="@v.Slug"
+                       class="text-decoration-none text-reset venue-card-link">
+                        <div class="card h-100 shadow-sm venue-card">
+                            @* Cover banner *@
+                            <div class="venue-card-cover">
+                                @if (!string.IsNullOrEmpty(v.CoverImageUrl))
+                                {
+                                    <img src="@v.CoverImageUrl" alt="@v.Name"
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                    <div class="venue-cover-fallback" style="display:none;">
+                                        <i class="bi bi-shop"></i>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="venue-cover-fallback">
+                                        <i class="bi bi-shop"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-3 mb-2">
+                                    <div class="venue-logo flex-shrink-0" style="width:40px;height:40px;">
+                                        @if (!string.IsNullOrEmpty(v.LogoUrl))
+                                        {
+                                            <img src="@v.LogoUrl" alt="@v.Name"
+                                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                            <div class="venue-logo-fallback" style="display:none;">
+                                                <i class="bi bi-shop"></i>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="venue-logo-fallback">
+                                                <i class="bi bi-shop"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title fw-bold mb-0">@v.Name</h5>
+                                        <div class="small text-muted text-truncate" title="@v.Address">
+                                            <i class="bi bi-geo-alt me-1"></i>@v.Address
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(v.Description))
+                                {
+                                    <p class="card-text small text-muted mb-2 venue-card-desc">@v.Description</p>
+                                }
+
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-clock me-1"></i>@v.OpenTime.ToString("HH:mm")–@v.CloseTime.ToString("HH:mm")
+                                    </span>
+                                    <span class="badge @(v.AvailableTableCount > 0 ? "bg-success" : "bg-danger")">
+                                        @{
+                                            var tableText = v.AvailableTableCount > 0
+                                                ? $"{v.AvailableTableCount}/{v.TotalTableCount} bàn trống"
+                                                : $"Hết bàn ({v.TotalTableCount})";
+                                        }
+                                        @if (v.AvailableTableCount > 0)
+                                        {
+                                            <i class="bi bi-check-circle me-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-x-circle me-1"></i>
+                                        }
+                                        @tableText
+                                    </span>
+                                    @if (v.OpenQueueCount > 0)
+                                    {
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-list-ol me-1"></i>@v.OpenQueueCount hàng đợi
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .venue-card {
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 2px solid transparent;
+    }
+    .venue-card-link:hover .venue-card {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.12) !important;
+        border-color: #4e54c8;
+    }
+    .venue-card-cover {
+        width: 100%;
+        height: 140px;
+        overflow: hidden;
+        position: relative;
+        background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    }
+    .venue-card-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .venue-card-cover .venue-cover-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2.5rem;
+    }
+    .venue-card-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
