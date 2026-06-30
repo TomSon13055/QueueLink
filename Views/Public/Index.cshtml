@@ -5,6 +5,24 @@
 }
 
 <div class="container py-4">
+    @* ── COVER IMAGE ── *@
+    <div class="mb-3">
+        @if (!string.IsNullOrEmpty(Model.Venue.CoverImageUrl))
+        {
+            <img src="@Model.Venue.CoverImageUrl" alt="@Model.Venue.Name" class="venue-cover"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+            <div class="venue-cover-fallback" style="display:none;">
+                <i class="bi bi-shop"></i>
+            </div>
+        }
+        else
+        {
+            <div class="venue-cover-fallback">
+                <i class="bi bi-shop"></i>
+            </div>
+        }
+    </div>
+
     @* ── HEADER ── *@
     <div class="text-center mb-4">
         <h2 class="fw-bold">🍲 @Model.Venue.Name</h2>

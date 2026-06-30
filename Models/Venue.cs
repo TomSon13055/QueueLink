@@ -24,6 +24,12 @@ public class Venue
     public string? LogoUrl { get; set; }
 
     /// <summary>
+    /// Ảnh bìa lớn của quán (hiển thị ở trang chi tiết venue công khai).
+    /// </summary>
+    [StringLength(500)]
+    public string? CoverImageUrl { get; set; }
+
+    /// <summary>
     /// URL slug cho trang công khai, ví dụ: "dookki-nguyen-trai"
     /// </summary>
     [StringLength(200)]

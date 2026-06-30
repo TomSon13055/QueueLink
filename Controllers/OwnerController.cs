@@ -102,7 +102,11 @@ public class OwnerController : Controller
                 QueueServiceId = q.Id,
                 VenueId = venueId,
                 VenueName = venue.Name,
+                VenueLogoUrl = venue.LogoUrl,
+                VenueCoverImageUrl = venue.CoverImageUrl,
+                VenueAddress = venue.Address,
                 QueueServiceName = q.Name,
+                Description = q.Description,
                 QueueStatus = q.QueueStatus,
                 WaitingCount = q.Tickets.Count
             }).ToList()
@@ -447,6 +451,7 @@ public class OwnerController : Controller
             Address = venue.Address,
             Phone = venue.Phone,
             LogoUrl = venue.LogoUrl,
+            CoverImageUrl = venue.CoverImageUrl,
             Slug = venue.Slug,
             OpenTime = venue.OpenTime,
             CloseTime = venue.CloseTime,
@@ -468,6 +473,7 @@ public class OwnerController : Controller
         venue.Address = model.Address;
         venue.Phone = model.Phone;
         venue.LogoUrl = model.LogoUrl;
+        venue.CoverImageUrl = model.CoverImageUrl;
         venue.Slug = model.Slug;
         venue.OpenTime = model.OpenTime;
         venue.CloseTime = model.CloseTime;

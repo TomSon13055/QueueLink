@@ -30,6 +30,11 @@ public class VenueFormViewModel
     [Display(Name = "Logo URL")]
     public string? LogoUrl { get; set; }
 
+    [StringLength(500)]
+    [Url]
+    [Display(Name = "Cover Image URL (ảnh bìa)")]
+    public string? CoverImageUrl { get; set; }
+
     [StringLength(200)]
     [Display(Name = "Slug (URL công khai)")]
     public string? Slug { get; set; }

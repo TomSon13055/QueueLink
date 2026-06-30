@@ -10,7 +10,7 @@ public static class SeedData
 {
     // Hardcoded: must match the latest migration class name.
     // Update this if you add/rename migrations.
-    private const string CurrentMigrationName = "RestaurantModule";
+    private const string CurrentMigrationName = "AddVenueCoverImageUrl";
 
     // All migrations in chronological order. Used for baseline detection.
     private static readonly string[] AllMigrations = new[]
@@ -18,6 +18,7 @@ public static class SeedData
         "20260626131810_InitialCreate",
         "20260627033525_AddDataProtectionKeys",
         "20260628172948_RestaurantModule",
+        "20260630033015_AddVenueCoverImageUrl",
     };
 
     public static async Task InitializeAsync(
@@ -310,12 +311,13 @@ public static class SeedData
     /// </summary>
     private static async Task RecoverFromPartialMigrationAsync(ApplicationDbContext db, Npgsql.PostgresException pg)
     {
-        // Venues columns added by RestaurantModule.
+        // Venues columns added by RestaurantModule + AddVenueCoverImageUrl.
         await db.Database.ExecuteSqlRawAsync(@"
-            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""CloseTime"" time without time zone NOT NULL DEFAULT '00:00:00';
-            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""OpenTime""  time without time zone NOT NULL DEFAULT '00:00:00';
-            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""OwnerId""   character varying(450);
-            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""Slug""      character varying(200);
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""CloseTime""     time without time zone NOT NULL DEFAULT '00:00:00';
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""OpenTime""      time without time zone NOT NULL DEFAULT '00:00:00';
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""OwnerId""       character varying(450);
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""Slug""          character varying(200);
+            ALTER TABLE ""Venues"" ADD COLUMN IF NOT EXISTS ""CoverImageUrl"" character varying(500);
         ");
 
         // Tables created by RestaurantModule. IF NOT EXISTS makes this safe

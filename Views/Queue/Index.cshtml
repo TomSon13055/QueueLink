@@ -49,14 +49,36 @@
                      data-name="@item.QueueServiceName.ToLower()"
                      data-venue="@item.VenueName.ToLower()">
                     <div class="card h-100 shadow-sm queue-card @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "" : "border-secondary")">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary")">
+                        @* ── VENUE LOGO HEADER ── *@
+                        <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="venue-logo flex-shrink-0">
+                                    @if (!string.IsNullOrEmpty(item.VenueLogoUrl))
+                                    {
+                                        <img src="@item.VenueLogoUrl" alt="@item.VenueName"
+                                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                        <div class="venue-logo-fallback" style="display:none;">
+                                            <i class="bi bi-shop"></i>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="venue-logo-fallback">
+                                            <i class="bi bi-shop"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="small text-muted text-truncate" title="@item.VenueAddress">
+                                        <i class="bi bi-geo-alt me-1"></i>@item.VenueName
+                                    </div>
+                                </div>
+                                <span class="badge @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary") flex-shrink-0">
                                     @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Mở" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "Tạm dừng" : "Đóng")
                                 </span>
-                                <span class="text-muted small"><i class="bi bi-geo-alt me-1"></i>@item.VenueName</span>
                             </div>
-
+                        </div>
+                        <div class="card-body d-flex flex-column pt-3">
                             <h5 class="card-title fw-bold mb-1">@item.QueueServiceName</h5>
                             <p class="card-text text-muted small mb-3">@(item.Description ?? "Không có mô tả")</p>
 
