@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
 using QueueLink.Models;
+using QueueLink.ViewModels;
 using QueueStatus = QueueLink.Models.QueueStatus;
 using TicketStatus = QueueLink.Models.TicketStatus;
 using TableStatus = QueueLink.Models.TableStatus;
@@ -119,6 +120,16 @@ public class PublicController : Controller
                 && r.ReservationTime.AddMinutes(r.HoldMinutes) >= now)
             .ToListAsync();
 
+        // Layout* / Block are [NotMapped] on Table — fetch via raw SQL.
+        var layoutRows = await _db.Database
+            .SqlQueryRaw<TableLayoutRow>(
+                @"SELECT ""Id"", ""LayoutX"", ""LayoutY"", ""LayoutW"", ""LayoutH"", ""Block""
+                  FROM ""Tables""
+                  WHERE ""VenueId"" = {0} AND ""IsActive""", venue.Id)
+            .ToListAsync();
+
+        var layoutMap = layoutRows.ToDictionary(r => r.Id);
+
         bool hasAvailable = tables.Any(t => t.Status == TableStatus.Available);
 
         var queues = await _db.QueueServices
@@ -133,6 +144,7 @@ public class PublicController : Controller
             Tables = tables.Select(t =>
             {
                 var res = reservations.FirstOrDefault(r => r.TableId == t.Id);
+                layoutMap.TryGetValue(t.Id, out var layout);
                 return new PublicTableViewModel
                 {
                     Id = t.Id,
@@ -142,11 +154,11 @@ public class PublicController : Controller
                     ReservationCode = res?.ReservationCode,
                     ReservationCustomer = res?.CustomerName,
                     ReservationTime = res?.ReservationTime,
-                    LayoutX = t.LayoutX,
-                    LayoutY = t.LayoutY,
-                    LayoutW = t.LayoutW,
-                    LayoutH = t.LayoutH,
-                    Block = t.Block
+                    LayoutX = layout?.LayoutX ?? 50m,
+                    LayoutY = layout?.LayoutY ?? 50m,
+                    LayoutW = layout?.LayoutW ?? 12m,
+                    LayoutH = layout?.LayoutH ?? 9m,
+                    Block = layout?.Block
                 };
             }).ToList(),
             HasAvailableTables = hasAvailable,

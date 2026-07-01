@@ -124,6 +124,73 @@ using (var scope = app.Services.CreateScope())
     ");
 }
 
+// ── Ensure floor-plan layout columns exist ─────────────────────────
+// These columns are [NotMapped] in the Table model (EF ignores them)
+// so they are managed exclusively through raw SQL.  This block creates
+// them if missing and spreads stacked tables into a grid so the floor
+// plan is usable immediately.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // 1. Create columns (idempotent — IF NOT EXISTS is not valid DDL
+    // in PostgreSQL for ADD COLUMN, so we use a DO block).
+    await db.Database.ExecuteSqlRawAsync(@"
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'Tables' AND column_name = 'LayoutX'
+            ) THEN
+                ALTER TABLE ""Tables"" ADD COLUMN ""LayoutX"" decimal NOT NULL DEFAULT 50;
+            END IF;
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'Tables' AND column_name = 'LayoutY'
+            ) THEN
+                ALTER TABLE ""Tables"" ADD COLUMN ""LayoutY"" decimal NOT NULL DEFAULT 50;
+            END IF;
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'Tables' AND column_name = 'LayoutW'
+            ) THEN
+                ALTER TABLE ""Tables"" ADD COLUMN ""LayoutW"" decimal NOT NULL DEFAULT 12;
+            END IF;
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'Tables' AND column_name = 'LayoutH'
+            ) THEN
+                ALTER TABLE ""Tables"" ADD COLUMN ""LayoutH"" decimal NOT NULL DEFAULT 9;
+            END IF;
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'Tables' AND column_name = 'Block'
+            ) THEN
+                ALTER TABLE ""Tables"" ADD COLUMN ""Block"" varchar(50) NULL;
+            END IF;
+        END $$;
+    ");
+
+    // 2. Spread tables that are all at the default position (50,50).
+    // This runs every startup but only touches tables that are still
+    // stacked.  Once the owner moves things in the editor the query
+    // returns 0 rows and this becomes a no-op.
+    await db.Database.ExecuteSqlRawAsync(@"
+        UPDATE ""Tables"" AS t
+        SET
+            ""LayoutX"" = 12 + (rn % 4) * 22,
+            ""LayoutY"" = 18 + (rn / 4) * 22,
+            ""LayoutW"" = 18,
+            ""LayoutH"" = 16
+        FROM (
+            SELECT ""Id"", ROW_NUMBER() OVER (ORDER BY ""SortOrder"") - 1 AS rn
+            FROM ""Tables""
+            WHERE ""IsActive"" AND ""LayoutX"" = 50 AND ""LayoutY"" = 50
+        ) AS src
+        WHERE t.""Id"" = src.""Id"";
+    ");
+}
+
 // ── Seed data ────────────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {

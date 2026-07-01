@@ -43,13 +43,23 @@ public class StaffController : Controller
         var today = DateTime.UtcNow.Date;
         var now = DateTime.UtcNow;
 
-        // Load tables for this venue. Order by SortOrder only;
-        // Block ordering is skipped if the column doesn't exist yet
-        // (migration AddTableLayout hasn't been applied).
+        // Load tables — Block and Layout* are [NotMapped] so EF never
+        // SELECTs those columns.  We fetch them from raw SQL below.
         var tables = await _db.Tables
             .Where(t => t.VenueId == vid && t.IsActive)
             .OrderBy(t => t.SortOrder)
             .ToListAsync();
+
+        // Read layout data from the actual columns via raw SQL.
+        // Layout* / Block are managed exclusively through raw SQL.
+        var layoutRows = await _db.Database
+            .SqlQueryRaw<TableLayoutRow>(
+                @"SELECT ""Id"", ""LayoutX"", ""LayoutY"", ""LayoutW"", ""LayoutH"", ""Block""
+                  FROM ""Tables""
+                  WHERE ""VenueId"" = {0} AND ""IsActive""", vid.Value)
+            .ToListAsync();
+
+        var layoutMap = layoutRows.ToDictionary(r => r.Id);
 
         // Reservations and Orders are loaded separately, then
         // filtered by computed ExpiresAt in memory. We can't ask EF
@@ -77,21 +87,25 @@ public class StaffController : Controller
             .GroupBy(o => o.TableId)
             .ToDictionary(g => g.Key, g => g.First());
 
-        var vms = tables.Select(t => new TableDashboardViewModel
+        var vms = tables.Select(t =>
         {
-            Id = t.Id,
-            Name = t.Name,
-            Capacity = t.Capacity,
-            Status = t.Status,
-            SortOrder = t.SortOrder,
-            IsActive = t.IsActive,
-            LayoutX = t.LayoutX,
-            LayoutY = t.LayoutY,
-            LayoutW = t.LayoutW,
-            LayoutH = t.LayoutH,
-            Block = t.Block,
-            ActiveReservation = resByTable.TryGetValue(t.Id, out var r) ? r : null,
-            ActiveOrder = orderByTable.TryGetValue(t.Id, out var o) ? o : null,
+            layoutMap.TryGetValue(t.Id, out var layout);
+            return new TableDashboardViewModel
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Capacity = t.Capacity,
+                Status = t.Status,
+                SortOrder = t.SortOrder,
+                IsActive = t.IsActive,
+                LayoutX = layout?.LayoutX ?? 50m,
+                LayoutY = layout?.LayoutY ?? 50m,
+                LayoutW = layout?.LayoutW ?? 12m,
+                LayoutH = layout?.LayoutH ?? 9m,
+                Block = layout?.Block,
+                ActiveReservation = resByTable.TryGetValue(t.Id, out var r) ? r : null,
+                ActiveOrder = orderByTable.TryGetValue(t.Id, out var o) ? o : null,
+            };
         }).ToList();
 
         ViewBag.VenueId = vid.Value;

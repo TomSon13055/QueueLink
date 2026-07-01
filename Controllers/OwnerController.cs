@@ -8,6 +8,11 @@ using QueueLink.ViewModels;
 
 namespace QueueLink.Controllers;
 
+/// <summary>
+/// Projection for reading layout columns via raw SQL.
+/// Matches "Tables" columns that are [NotMapped] on the Table entity.
+/// </summary>
+
 [Authorize(Roles = "Admin")]
 public class OwnerController : Controller
 {
@@ -237,6 +242,8 @@ public class OwnerController : Controller
 
     // ════════════════════════════════════════════════════════════════════
     // FLOOR PLAN EDITOR (drag-drop sơ đồ bàn)
+    // ── Note: Block and Layout* are [NotMapped] on Table (EF ignores
+    //    them). All reads and writes go through raw SQL.
     // ════════════════════════════════════════════════════════════════════
 
     [HttpGet]
@@ -245,14 +252,36 @@ public class OwnerController : Controller
         var venue = await _db.Venues.FindAsync(venueId);
         if (venue == null) return NotFound();
 
+        // EF query returns core Table columns only (Layout*/Block are NotMapped).
         var tables = await _db.Tables
             .Where(t => t.VenueId == venueId && t.IsActive)
             .OrderBy(t => t.SortOrder)
             .ToListAsync();
 
+        // Augment with layout data from raw SQL.
+        var layoutRows = await _db.Database
+            .SqlQueryRaw<TableLayoutRow>(
+                @"SELECT ""Id"", ""LayoutX"", ""LayoutY"", ""LayoutW"", ""LayoutH"", ""Block""
+                  FROM ""Tables""
+                  WHERE ""VenueId"" = {0} AND ""IsActive""", venueId)
+            .ToListAsync();
+
+        var layoutMap = layoutRows.ToDictionary(r => r.Id);
+
+        var vms = tables.Select(t =>
+        {
+            layoutMap.TryGetValue(t.Id, out var layout);
+            t.LayoutX = layout?.LayoutX ?? 50m;
+            t.LayoutY = layout?.LayoutY ?? 50m;
+            t.LayoutW = layout?.LayoutW ?? 12m;
+            t.LayoutH = layout?.LayoutH ?? 9m;
+            t.Block = layout?.Block;
+            return t;
+        }).ToList();
+
         ViewBag.VenueId = venueId;
         ViewBag.VenueName = venue.Name;
-        return View(tables);
+        return View(vms);
     }
 
     /// <summary>
@@ -264,13 +293,14 @@ public class OwnerController : Controller
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UpdateTablePosition(int id, decimal x, decimal y)
     {
-        var table = await _db.Tables.FindAsync(id);
-        if (table == null) return NotFound();
+        x = Math.Clamp(x, 0m, 100m);
+        y = Math.Clamp(y, 0m, 100m);
 
-        table.LayoutX = Math.Clamp(x, 0m, 100m);
-        table.LayoutY = Math.Clamp(y, 0m, 100m);
-        await _db.SaveChangesAsync();
-        return Ok(new { id, x = table.LayoutX, y = table.LayoutY });
+        await _db.Database.ExecuteSqlRawAsync(
+            @"UPDATE ""Tables"" SET ""LayoutX"" = {0}, ""LayoutY"" = {1} WHERE ""Id"" = {2}",
+            x, y, id);
+
+        return Ok(new { id, x, y });
     }
 
     /// <summary>
@@ -282,12 +312,12 @@ public class OwnerController : Controller
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UpdateTableBlock(int id, string? block)
     {
-        var table = await _db.Tables.FindAsync(id);
-        if (table == null) return NotFound();
+        var trimmed = string.IsNullOrWhiteSpace(block) ? null : block.Trim();
+        await _db.Database.ExecuteSqlRawAsync(
+            @"UPDATE ""Tables"" SET ""Block"" = {0} WHERE ""Id"" = {1}",
+            trimmed ?? (object)DBNull.Value, id);
 
-        table.Block = string.IsNullOrWhiteSpace(block) ? null : block.Trim();
-        await _db.SaveChangesAsync();
-        return Ok(new { id, block = table.Block });
+        return Ok(new { id, block = trimmed });
     }
 
     // ════════════════════════════════════════════════════════════════════
