@@ -46,7 +46,12 @@ public class ReservationController : Controller
         ViewBag.Venue = venue;
         ViewBag.AvailableTables = availableTables;
         ViewBag.TimeSlots = slots;
-        return View();
+        // Pass venue so the @model-bound view can render @Model.Name /
+        // @Model.Slug / @Model.OpenTime / @Model.CloseTime. The view
+        // also reads the same fields from ViewBag.Venue, but the
+        // @model directive requires a non-null instance or the
+        // very first Model.Name access NREs.
+        return View(venue);
     }
 
     [HttpPost]

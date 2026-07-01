@@ -201,21 +201,30 @@ public static class SeedData
     /// </summary>
     private static async Task BackfillVenueImagesAsync(ApplicationDbContext db)
     {
+        // Only fill rows where BOTH LogoUrl and CoverImageUrl are
+        // null. If an owner already saved a URL (even one we don't
+        // love the look of) leave it alone — they're the source of
+        // truth now and overriding their input on every deploy is a
+        // worse experience than a leftover Google Imgres URL.
         var rows = await db.Venues
             .Where(v => v.LogoUrl == null || v.CoverImageUrl == null)
             .Select(v => new { v.Id, v.Slug })
             .ToListAsync();
 
-        // Some owners pasted Google Image redirect URLs into the
-        // VenueSettings form (those URLs render HTML, not an image,
-        // so the <img onerror> path always fires and the venue ends
-        // up showing the fallback icon). Detect that pattern and
-        // overwrite with a known-good Unsplash URL per slug.
+        // Separate query: rows where the saved URL is *clearly*
+        // unusable (Google Imgres HTML redirect, not an image).
+        // We detect this by looking for the search-results redirect
+        // path AND a URL-encoded `imgurl=` parameter inside — that's
+        // what Google Image Search serves to its UI, and the
+        // <img src> will never resolve to a real image. Real Google
+        // storage URLs (e.g. storage.googleapis.com) won't match.
         var brokenRows = await db.Venues
-            .Where(v => (v.LogoUrl != null && v.LogoUrl.Contains("google.com.vn"))
-                     || (v.LogoUrl != null && v.LogoUrl.Contains("google.com/imgres"))
-                     || (v.CoverImageUrl != null && v.CoverImageUrl.Contains("google.com.vn"))
-                     || (v.CoverImageUrl != null && v.CoverImageUrl.Contains("google.com/imgres")))
+            .Where(v => (v.LogoUrl != null
+                          && v.LogoUrl.Contains("/imgres?")
+                          && v.LogoUrl.Contains("imgurl="))
+                     || (v.CoverImageUrl != null
+                          && v.CoverImageUrl.Contains("/imgres?")
+                          && v.CoverImageUrl.Contains("imgurl=")))
             .Select(v => new { v.Id, v.Slug })
             .ToListAsync();
 
@@ -233,11 +242,32 @@ public static class SeedData
             // Raw SQL keeps this idempotent and avoids dragging the
             // full Venue entity through change tracking. Slug and Id
             // are values we just read, never user input.
+            //
+            // Branches:
+            //   - both columns null   → fill with defaults
+            //   - only one null      → fill the null one with its
+            //                          matching default, leave the
+            //                          existing one alone
+            //   - both contain a     → overwrite both with defaults
+            //     broken Imgres URL     (there's nothing useful to
+            //                          preserve)
 #pragma warning disable EF1002
             await db.Database.ExecuteSqlRawAsync(
                 $@"UPDATE ""Venues""
-                   SET ""LogoUrl""      = '{logo}',
-                       ""CoverImageUrl"" = '{cover}'
+                   SET ""LogoUrl""      = CASE
+                                            WHEN ""LogoUrl"" IS NULL
+                                                 OR (""LogoUrl"" LIKE '%/imgres?%'
+                                                     AND ""LogoUrl"" LIKE '%imgurl=%')
+                                                 THEN '{logo}'
+                                            ELSE ""LogoUrl""
+                                          END,
+                       ""CoverImageUrl"" = CASE
+                                            WHEN ""CoverImageUrl"" IS NULL
+                                                 OR (""CoverImageUrl"" LIKE '%/imgres?%'
+                                                     AND ""CoverImageUrl"" LIKE '%imgurl=%')
+                                                 THEN '{cover}'
+                                            ELSE ""CoverImageUrl""
+                                          END
                    WHERE ""Id"" = {row.Id};");
 #pragma warning restore EF1002
         }
