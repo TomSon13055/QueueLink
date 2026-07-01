@@ -43,6 +43,11 @@ public class PublicTableViewModel
     public string? ReservationCode { get; set; }
     public string? ReservationCustomer { get; set; }
     public DateTime? ReservationTime { get; set; }
+    public decimal LayoutX { get; set; }
+    public decimal LayoutY { get; set; }
+    public decimal LayoutW { get; set; }
+    public decimal LayoutH { get; set; }
+    public string? Block { get; set; }
 }
 
 public class PublicQueueViewModel
@@ -136,7 +141,12 @@ public class PublicController : Controller
                     Status = t.Status,
                     ReservationCode = res?.ReservationCode,
                     ReservationCustomer = res?.CustomerName,
-                    ReservationTime = res?.ReservationTime
+                    ReservationTime = res?.ReservationTime,
+                    LayoutX = t.LayoutX,
+                    LayoutY = t.LayoutY,
+                    LayoutW = t.LayoutW,
+                    LayoutH = t.LayoutH,
+                    Block = t.Block
                 };
             }).ToList(),
             HasAvailableTables = hasAvailable,

@@ -333,3 +333,40 @@ main {
     border-radius: 0;
     font-size: 1.5rem;
 }
+
+/* Public floor plan canvas (smaller than staff, more compact) */
+.public-floor-canvas {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    background:
+        linear-gradient(rgba(0,0,0,.04) 1px, transparent 1px) 0 0 / 36px 36px,
+        linear-gradient(90deg, rgba(0,0,0,.04) 1px, transparent 1px) 0 0 / 36px 36px,
+        #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.public-floor-table {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3px;
+    font-size: 0.7rem;
+    line-height: 1.05;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    border: 2px solid;
+    cursor: default;
+    transition: transform 0.15s ease;
+}
+
+.public-floor-table:hover {
+    z-index: 5;
+    transform: translate(-50%, -50%) scale(1.05);
+}

@@ -102,7 +102,6 @@ public class OwnerController : Controller
                 QueueServiceId = q.Id,
                 VenueId = venueId,
                 VenueName = venue.Name,
-                VenueSlug = venue.Slug,
                 VenueLogoUrl = venue.LogoUrl,
                 VenueCoverImageUrl = venue.CoverImageUrl,
                 VenueAddress = venue.Address,
@@ -165,7 +164,12 @@ public class OwnerController : Controller
             Capacity = model.Capacity,
             SortOrder = model.SortOrder,
             Status = TableStatus.Available,
-            IsActive = model.IsActive
+            IsActive = model.IsActive,
+            Block = string.IsNullOrWhiteSpace(model.Block) ? null : model.Block.Trim(),
+            LayoutX = model.LayoutX,
+            LayoutY = model.LayoutY,
+            LayoutW = model.LayoutW,
+            LayoutH = model.LayoutH
         };
 
         _db.Tables.Add(table);
@@ -188,7 +192,12 @@ public class OwnerController : Controller
             Name = table.Name,
             Capacity = table.Capacity,
             SortOrder = table.SortOrder,
-            IsActive = table.IsActive
+            IsActive = table.IsActive,
+            Block = table.Block,
+            LayoutX = table.LayoutX,
+            LayoutY = table.LayoutY,
+            LayoutW = table.LayoutW,
+            LayoutH = table.LayoutH
         });
     }
 
@@ -203,6 +212,11 @@ public class OwnerController : Controller
         table.Capacity = model.Capacity;
         table.SortOrder = model.SortOrder;
         table.IsActive = model.IsActive;
+        table.Block = string.IsNullOrWhiteSpace(model.Block) ? null : model.Block.Trim();
+        table.LayoutX = model.LayoutX;
+        table.LayoutY = model.LayoutY;
+        table.LayoutW = model.LayoutW;
+        table.LayoutH = model.LayoutH;
 
         await _db.SaveChangesAsync();
         TempData["Success"] = "Đã cập nhật bàn.";
@@ -219,6 +233,62 @@ public class OwnerController : Controller
         await _db.SaveChangesAsync();
         TempData["Success"] = "Đã xóa bàn.";
         return RedirectToAction(nameof(Tables), new { venueId });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // FLOOR PLAN EDITOR (drag-drop sơ đồ bàn)
+    // ════════════════════════════════════════════════════════════════════
+
+    [HttpGet]
+    public async Task<IActionResult> FloorPlanEditor(int venueId)
+    {
+        var venue = await _db.Venues.FindAsync(venueId);
+        if (venue == null) return NotFound();
+
+        var tables = await _db.Tables
+            .Where(t => t.VenueId == venueId && t.IsActive)
+            .OrderBy(t => t.Block ?? "")
+            .ThenBy(t => t.SortOrder)
+            .ToListAsync();
+
+        ViewBag.VenueId = venueId;
+        ViewBag.VenueName = venue.Name;
+        return View(tables);
+    }
+
+    /// <summary>
+    /// Persist the new (X, Y) position of a single table. Used by
+    /// the drag-and-drop editor. The browser sends 0..100 floats
+    /// representing the percentage across the canvas.
+    /// </summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> UpdateTablePosition(int id, decimal x, decimal y)
+    {
+        var table = await _db.Tables.FindAsync(id);
+        if (table == null) return NotFound();
+
+        table.LayoutX = Math.Clamp(x, 0m, 100m);
+        table.LayoutY = Math.Clamp(y, 0m, 100m);
+        await _db.SaveChangesAsync();
+        return Ok(new { id, x = table.LayoutX, y = table.LayoutY });
+    }
+
+    /// <summary>
+    /// Assign a table to a block (zone label). Empty string
+    /// removes the block. Used by the per-table dropdown in the
+    /// editor.
+    /// </summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> UpdateTableBlock(int id, string? block)
+    {
+        var table = await _db.Tables.FindAsync(id);
+        if (table == null) return NotFound();
+
+        table.Block = string.IsNullOrWhiteSpace(block) ? null : block.Trim();
+        await _db.SaveChangesAsync();
+        return Ok(new { id, block = table.Block });
     }
 
     // ════════════════════════════════════════════════════════════════════

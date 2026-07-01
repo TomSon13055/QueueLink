@@ -50,6 +50,9 @@ public static class SeedData
             // Backfill any venue whose images are still null so the public
             // detail page and queue cards stop showing the icon fallback.
             await BackfillVenueImagesAsync(db);
+            // Also spread tables that landed on the default LayoutX/Y=50
+            // (all stacked on top of each other before the editor existed).
+            await BackfillTableLayoutsAsync(db);
             return;
         }
 
@@ -108,16 +111,17 @@ public static class SeedData
         // ── Tables ──────────────────────────────────────────────────────
         var tables = new[]
         {
-            new Table { VenueId = v1.Id, Name = "Bàn 1", Capacity = 4, SortOrder = 1, Status = TableStatus.Available },
-            new Table { VenueId = v1.Id, Name = "Bàn 2", Capacity = 4, SortOrder = 2, Status = TableStatus.Available },
-            new Table { VenueId = v1.Id, Name = "Bàn 3", Capacity = 6, SortOrder = 3, Status = TableStatus.Available },
-            new Table { VenueId = v1.Id, Name = "Bàn 4", Capacity = 4, SortOrder = 4, Status = TableStatus.Available },
-            new Table { VenueId = v1.Id, Name = "Bàn 5", Capacity = 6, SortOrder = 5, Status = TableStatus.Available },
-            new Table { VenueId = v1.Id, Name = "Bàn 6", Capacity = 8, SortOrder = 6, Status = TableStatus.Available },
-            new Table { VenueId = v2.Id, Name = "Box 1", Capacity = 4, SortOrder = 1, Status = TableStatus.Available },
-            new Table { VenueId = v2.Id, Name = "Box 2", Capacity = 4, SortOrder = 2, Status = TableStatus.Available },
-            new Table { VenueId = v3.Id, Name = "Quầy 1", Capacity = 2, SortOrder = 1, Status = TableStatus.Available },
-            new Table { VenueId = v3.Id, Name = "Quầy 2", Capacity = 2, SortOrder = 2, Status = TableStatus.Available },
+            // Layout: 3 bàn mỗi hàng, 16% width, 11% height.
+            new Table { VenueId = v1.Id, Name = "Bàn 1", Capacity = 4, SortOrder = 1, Status = TableStatus.Available, Block = "Tầng 1", LayoutX = 16, LayoutY = 22, LayoutW = 16, LayoutH = 14 },
+            new Table { VenueId = v1.Id, Name = "Bàn 2", Capacity = 4, SortOrder = 2, Status = TableStatus.Available, Block = "Tầng 1", LayoutX = 50, LayoutY = 22, LayoutW = 16, LayoutH = 14 },
+            new Table { VenueId = v1.Id, Name = "Bàn 3", Capacity = 6, SortOrder = 3, Status = TableStatus.Available, Block = "Tầng 1", LayoutX = 84, LayoutY = 22, LayoutW = 16, LayoutH = 14 },
+            new Table { VenueId = v1.Id, Name = "Bàn 4", Capacity = 4, SortOrder = 4, Status = TableStatus.Available, Block = "Tầng 1", LayoutX = 16, LayoutY = 50, LayoutW = 16, LayoutH = 14 },
+            new Table { VenueId = v1.Id, Name = "Bàn 5", Capacity = 6, SortOrder = 5, Status = TableStatus.Available, Block = "Tầng 1", LayoutX = 50, LayoutY = 50, LayoutW = 16, LayoutH = 14 },
+            new Table { VenueId = v1.Id, Name = "Bàn 6", Capacity = 8, SortOrder = 6, Status = TableStatus.Available, Block = "VIP", LayoutX = 84, LayoutY = 50, LayoutW = 16, LayoutH = 14 },
+            new Table { VenueId = v2.Id, Name = "Box 1", Capacity = 4, SortOrder = 1, Status = TableStatus.Available, Block = "Box", LayoutX = 30, LayoutY = 35, LayoutW = 22, LayoutH = 22 },
+            new Table { VenueId = v2.Id, Name = "Box 2", Capacity = 4, SortOrder = 2, Status = TableStatus.Available, Block = "Box", LayoutX = 70, LayoutY = 35, LayoutW = 22, LayoutH = 22 },
+            new Table { VenueId = v3.Id, Name = "Quầy 1", Capacity = 2, SortOrder = 1, Status = TableStatus.Available, Block = "Quầy", LayoutX = 30, LayoutY = 40, LayoutW = 20, LayoutH = 18 },
+            new Table { VenueId = v3.Id, Name = "Quầy 2", Capacity = 2, SortOrder = 2, Status = TableStatus.Available, Block = "Quầy", LayoutX = 70, LayoutY = 40, LayoutW = 20, LayoutH = 18 },
         };
         db.Tables.AddRange(tables);
 
@@ -199,6 +203,45 @@ public static class SeedData
     /// fallback. Patch any such rows in place so the UI looks correct
     /// on the very next request after a deploy.
     /// </summary>
+    /// <summary>
+    /// Older DBs (seeded before the LayoutX/Y/W/H columns existed)
+    /// leave every existing table with the model defaults (50/50/12/9),
+    /// so all of them land on top of each other and the floor plan
+    /// is unreadable. Spread them out in a grid per venue, ordered
+    /// by SortOrder, so the visual is at least usable until the
+    /// host opens the editor and arranges them properly.
+    /// </summary>
+    private static async Task BackfillTableLayoutsAsync(ApplicationDbContext db)
+    {
+        var venuesWithTables = await db.Tables
+            .Where(t => t.IsActive)
+            .GroupBy(t => t.VenueId)
+            .Select(g => new { VenueId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        foreach (var v in venuesWithTables)
+        {
+            // Per-venue: 4 tables per row, grid spacing 18% width / 16% height.
+            var tables = await db.Tables
+                .Where(t => t.VenueId == v.VenueId && t.IsActive)
+                .OrderBy(t => t.Block ?? "")
+                .ThenBy(t => t.SortOrder)
+                .ToListAsync();
+
+            for (int i = 0; i < tables.Count; i++)
+            {
+                int col = i % 4;
+                int row = i / 4;
+                tables[i].LayoutX = 12 + col * 22m;
+                tables[i].LayoutY = 18 + row * 22m;
+                tables[i].LayoutW = 18m;
+                tables[i].LayoutH = 16m;
+            }
+        }
+
+        await db.SaveChangesAsync();
+    }
+
     private static async Task BackfillVenueImagesAsync(ApplicationDbContext db)
     {
         // Only fill rows where BOTH LogoUrl and CoverImageUrl are

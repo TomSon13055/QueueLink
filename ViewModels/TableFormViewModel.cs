@@ -23,4 +23,24 @@ public class TableFormViewModel
 
     [Display(Name = "Hoạt động")]
     public bool IsActive { get; set; } = true;
+
+    [Display(Name = "Khu vực / Block")]
+    [StringLength(50)]
+    public string? Block { get; set; }
+
+    [Display(Name = "Vị trí X (%)")]
+    [Range(0, 100)]
+    public decimal LayoutX { get; set; } = 50m;
+
+    [Display(Name = "Vị trí Y (%)")]
+    [Range(0, 100)]
+    public decimal LayoutY { get; set; } = 50m;
+
+    [Display(Name = "Chiều rộng (%)")]
+    [Range(2, 100)]
+    public decimal LayoutW { get; set; } = 12m;
+
+    [Display(Name = "Chiều cao (%)")]
+    [Range(2, 100)]
+    public decimal LayoutH { get; set; } = 9m;
 }

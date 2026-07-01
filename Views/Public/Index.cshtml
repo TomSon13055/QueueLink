@@ -73,56 +73,58 @@
         </div>
     </div>
 
-    @* ── TABLE STATUS ── *@
+    @* ── TABLE STATUS — floor plan + legend ── *@
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-table me-2 text-primary"></i>Tình trạng bàn</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Bàn</th>
-                            <th>Sức chứa</th>
-                            <th>Tình trạng</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var t in Model.Tables)
-                        {
-                            <tr>
-                                <td class="fw-semibold">@t.Name</td>
-                                <td>@t.Capacity người</td>
-                                <td>
-                                    @if (t.Status == QueueLink.Models.TableStatus.Available)
-                                    {
-                                        <span class="badge bg-success">🟢 Trống</span>
-                                    }
-                                    else if (t.Status == QueueLink.Models.TableStatus.Reserved)
-                                    {
-                                        <span class="badge bg-warning text-dark">
-                                            🟡 Đặt trước
-                                            @if (!string.IsNullOrEmpty(t.ReservationCustomer))
-                                            {
-                                                <span>— @t.ReservationCustomer (@t.ReservationTime?.ToString("HH:mm"))</span>
-                                            }
-                                        </span>
-                                    }
-                                    else if (t.Status == QueueLink.Models.TableStatus.Occupied)
-                                    {
-                                        <span class="badge bg-danger">🔴 Đang có khách</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">🟤 Đang dọn dẹp</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Sơ đồ bàn</h5>
+            <div class="small">
+                <span class="me-3"><span class="legend-dot bg-success"></span>Trống</span>
+                <span class="me-3"><span class="legend-dot bg-warning"></span>Đặt trước</span>
+                <span class="me-3"><span class="legend-dot bg-danger"></span>Có khách</span>
+                <span class="me-3"><span class="legend-dot bg-secondary"></span>Dọn dẹp</span>
             </div>
+        </div>
+        <div class="card-body">
+            @{
+                var tablesByBlock = Model.Tables
+                    .GroupBy(t => string.IsNullOrWhiteSpace(t.Block) ? "Khu vực chính" : t.Block!)
+                    .OrderBy(g => g.Key == "Khu vực chính" ? 0 : 1)
+                    .ThenBy(g => g.Key)
+                    .ToList();
+            }
+            @foreach (var block in tablesByBlock)
+            {
+                <div class="mb-4">
+                    <h6 class="fw-bold text-uppercase text-muted small mb-2">
+                        <i class="bi bi-bookmark-fill me-1"></i>@block.Key
+                        <span class="badge bg-light text-dark ms-2">@block.Count() bàn</span>
+                    </h6>
+                    <div class="public-floor-canvas">
+                        @foreach (var t in block)
+                        {
+                            var statusClass = t.Status switch
+                            {
+                                QueueLink.Models.TableStatus.Available => "table-status-available",
+                                QueueLink.Models.TableStatus.Reserved => "table-status-reserved",
+                                QueueLink.Models.TableStatus.Occupied => "table-status-occupied",
+                                _ => "table-status-cleaning"
+                            };
+                            <div class="public-floor-table @statusClass"
+                                 style="left:@(t.LayoutX.ToString(System.Globalization.CultureInfo.InvariantCulture))%;top:@(t.LayoutY.ToString(System.Globalization.CultureInfo.InvariantCulture))%;width:@(t.LayoutW.ToString(System.Globalization.CultureInfo.InvariantCulture))%;height:@(t.LayoutH.ToString(System.Globalization.CultureInfo.InvariantCulture))%;"
+                                 title="@t.Name — @t.Capacity người">
+                                <div class="floor-table-name">@t.Name</div>
+                                <div class="floor-table-meta">@t.Capacity👤</div>
+                                @if (t.Status == QueueLink.Models.TableStatus.Reserved && !string.IsNullOrEmpty(t.ReservationCustomer))
+                                {
+                                    <div class="floor-table-res">
+                                        <i class="bi bi-calendar-check"></i> @t.ReservationTime?.ToString("HH:mm")
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
         </div>
     </div>
 

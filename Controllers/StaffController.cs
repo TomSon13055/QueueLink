@@ -43,23 +43,61 @@ public class StaffController : Controller
         var today = DateTime.UtcNow.Date;
         var now = DateTime.UtcNow;
 
+        // Load tables for this venue. Order by Block then SortOrder
+        // so the editor view reads top-to-bottom by zone.
         var tables = await _db.Tables
             .Where(t => t.VenueId == vid && t.IsActive)
-            .Include(t => t.Reservations
-                .Where(r => r.Status == ReservationStatus.Confirmed
-                    && r.ReservationTime.Date == today
-                    && r.ExpiresAt >= now))
-            .Include(t => t.Orders
-                .Where(o => o.Status == OrderStatus.Open
-                    || o.Status == OrderStatus.Submitted
-                    || o.Status == OrderStatus.Served))
-            .OrderBy(t => t.SortOrder)
+            .OrderBy(t => t.Block ?? "")
+            .ThenBy(t => t.SortOrder)
             .ToListAsync();
+
+        // Reservations and Orders are loaded separately, then
+        // filtered by computed ExpiresAt in memory. We can't ask EF
+        // to filter by ExpiresAt because it's a computed property
+        // (ReservationTime + HoldMinutes) with no SQL column.
+        var reservations = await _db.Reservations
+            .Where(r => r.Table!.VenueId == vid
+                     && r.Status == ReservationStatus.Confirmed
+                     && r.ReservationTime.Date == today
+                     && r.ReservationTime.AddMinutes(r.HoldMinutes) >= now)
+            .ToListAsync();
+
+        var orders = await _db.Orders
+            .Where(o => o.Table!.VenueId == vid
+                     && (o.Status == OrderStatus.Open
+                      || o.Status == OrderStatus.Submitted
+                      || o.Status == OrderStatus.Served))
+            .ToListAsync();
+
+        var resByTable = reservations
+            .GroupBy(r => r.TableId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var orderByTable = orders
+            .GroupBy(o => o.TableId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var vms = tables.Select(t => new TableDashboardViewModel
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Capacity = t.Capacity,
+            Status = t.Status,
+            SortOrder = t.SortOrder,
+            IsActive = t.IsActive,
+            LayoutX = t.LayoutX,
+            LayoutY = t.LayoutY,
+            LayoutW = t.LayoutW,
+            LayoutH = t.LayoutH,
+            Block = t.Block,
+            ActiveReservation = resByTable.TryGetValue(t.Id, out var r) ? r : null,
+            ActiveOrder = orderByTable.TryGetValue(t.Id, out var o) ? o : null,
+        }).ToList();
 
         ViewBag.VenueId = vid.Value;
         ViewBag.VenueName = venue.Name;
         ViewBag.IsAdmin = User.IsInRole("Admin");
-        return View(tables);
+        return View(vms);
     }
 
     // ════════════════════════════════════════════════════════════════════

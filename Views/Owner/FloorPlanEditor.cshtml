@@ -1,0 +1,288 @@
+@model IEnumerable<QueueLink.Models.Table>
+@{
+    ViewData["Title"] = "Sơa sơ đồ bàn — " + ViewBag.VenueName;
+    Layout = "_Layout";
+
+    var byBlock = Model
+        .GroupBy(t => t.Block ?? "")
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Sửa sơ đồ bàn — @ViewBag.VenueName</h4>
+            <p class="text-muted small mb-0">Kéo từng bàn để đặt vị trí. Bạn có thể nhóm bàn thành các khu vực (block) để dễ quản lý.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Staff" asp-action="FloorPlan" asp-route-venueId="@ViewBag.VenueId" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Xem sơ đồ
+            </a>
+            <a asp-controller="Owner" asp-action="Tables" asp-route-venueId="@ViewBag.VenueId" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Thêm bàn
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <h5>Chưa có bàn nào trong quán này</h5>
+            <a asp-controller="Owner" asp-action="TableCreate" asp-route-venueId="@ViewBag.VenueId" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Thêm bàn đầu tiên
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-9">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-bounding-box me-2"></i>Bản vẽ sơ đồ</h6>
+                        <div class="small text-muted">
+                            <i class="bi bi-arrows-move me-1"></i>Kéo thả bàn trên canvas
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="floorCanvas" class="editor-canvas">
+                            @foreach (var t in Model)
+                            {
+                                <div class="editor-table"
+                                     data-table-id="@t.Id"
+                                     data-block="@(t.Block ?? "")"
+                                     style="left:@(t.LayoutX.ToString(System.Globalization.CultureInfo.InvariantCulture))%;top:@(t.LayoutY.ToString(System.Globalization.CultureInfo.InvariantCulture))%;width:@(t.LayoutW.ToString(System.Globalization.CultureInfo.InvariantCulture))%;height:@(t.LayoutH.ToString(System.Globalization.CultureInfo.InvariantCulture))%;">
+                                    <div class="fw-bold">@t.Name</div>
+                                    <div class="small opacity-75">@t.Capacity người</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-bookmark me-2"></i>Phân khu vực</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="small text-muted mb-2">Bàn đang thuộc khu vực nào?</div>
+                        <div id="blockList" class="d-flex flex-wrap gap-1 mb-2">
+                            @foreach (var b in byBlock)
+                            {
+                                <span class="badge bg-light text-dark border">
+                                    @(string.IsNullOrEmpty(b.Key) ? "Chưa phân khu" : b.Key) · @b.Count()
+                                </span>
+                            }
+                        </div>
+                        <hr />
+                        <div class="small text-muted mb-1">Đổi khu vực cho bàn đang chọn</div>
+                        <select id="blockSelect" class="form-select form-select-sm mb-2">
+                            <option value="">— Chưa phân khu —</option>
+                            @foreach (var b in byBlock.Where(g => !string.IsNullOrEmpty(g.Key)))
+                            {
+                                <option value="@b.Key">@b.Key</option>
+                            }
+                            <option value="__new__">+ Tạo khu vực mới…</option>
+                        </select>
+                        <input id="newBlockInput" type="text" class="form-control form-control-sm mb-2" placeholder="Tên khu vực mới" style="display:none;" />
+                        <button id="applyBlockBtn" type="button" class="btn btn-sm btn-primary w-100" disabled>
+                            <i class="bi bi-check2 me-1"></i>Áp dụng
+                        </button>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-list-ul me-2"></i>Bàn trong quán</h6>
+                    </div>
+                    <div class="list-group list-group-flush" style="max-height:480px;overflow-y:auto;">
+                        @foreach (var t in Model)
+                        {
+                            <button type="button" class="list-group-item list-group-item-action table-pick" data-table-id="@t.Id">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-semibold">@t.Name</span>
+                                    <span class="small text-muted">@t.Capacity người</span>
+                                </div>
+                                <div class="small text-muted">@(t.Block ?? "Chưa phân khu")</div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .editor-canvas {
+        position: relative;
+        width: 100%;
+        height: 540px;
+        background:
+            linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px) 0 0 / 40px 40px,
+            linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px) 0 0 / 40px 40px,
+            #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        overflow: hidden;
+        user-select: none;
+    }
+
+    .editor-table {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        border-radius: 10px;
+        background: #cfe2ff;
+        border: 2px solid #0d6efd;
+        color: #052c65;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 4px;
+        cursor: grab;
+        box-shadow: 0 2px 4px rgba(0,0,0,.15);
+        font-size: 0.78rem;
+        line-height: 1.1;
+    }
+
+    .editor-table.is-dragging {
+        cursor: grabbing;
+        opacity: 0.85;
+        z-index: 10;
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    .editor-table.is-selected {
+        border-color: #dc3545;
+        background: #f8d7da;
+        color: #58151c;
+        box-shadow: 0 0 0 3px rgba(220,53,69,.25);
+    }
+
+    .table-pick.is-active {
+        background: #f1f3f5;
+        font-weight: 600;
+    }
+</style>
+
+@section Scripts {
+<script>
+(function () {
+    const canvas = document.getElementById('floorCanvas');
+    if (!canvas) return;
+
+    let activeId = null;
+    let draggingEl = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    let dirtyBlockEl = null;
+
+    const applyBlockBtn = document.getElementById('applyBlockBtn');
+    const blockSelect = document.getElementById('blockSelect');
+    const newBlockInput = document.getElementById('newBlockInput');
+
+    blockSelect.addEventListener('change', () => {
+        newBlockInput.style.display = blockSelect.value === '__new__' ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.table-pick').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.table-pick').forEach(b => b.classList.remove('is-active'));
+            document.querySelectorAll('.editor-table').forEach(t => t.classList.remove('is-selected'));
+            btn.classList.add('is-active');
+            const id = btn.dataset.tableId;
+            const el = canvas.querySelector(`.editor-table[data-table-id="${id}"]`);
+            if (el) el.classList.add('is-selected');
+            activeId = id;
+            applyBlockBtn.disabled = false;
+        });
+    });
+
+    function getCanvasPercent(clientX, clientY, el) {
+        const rect = canvas.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const cx = clientX - rect.left - (elRect.width / 2);
+        const cy = clientY - rect.top - (elRect.height / 2);
+        const xPct = Math.max(0, Math.min(100, (cx / rect.width) * 100));
+        const yPct = Math.max(0, Math.min(100, (cy / rect.height) * 100));
+        return { x: xPct, y: yPct };
+    }
+
+    canvas.querySelectorAll('.editor-table').forEach(el => {
+        el.addEventListener('pointerdown', ev => {
+            ev.preventDefault();
+            draggingEl = el;
+            el.setPointerCapture(ev.pointerId);
+            el.classList.add('is-dragging');
+            activeId = el.dataset.tableId;
+            document.querySelectorAll('.table-pick').forEach(b => b.classList.toggle('is-active', b.dataset.tableId === activeId));
+            document.querySelectorAll('.editor-table').forEach(t => t.classList.toggle('is-selected', t === el));
+            applyBlockBtn.disabled = false;
+
+            const rect = el.getBoundingClientRect();
+            dragOffsetX = ev.clientX - (rect.left + rect.width / 2);
+            dragOffsetY = ev.clientY - (rect.top + rect.height / 2);
+        });
+
+        el.addEventListener('pointermove', ev => {
+            if (draggingEl !== el) return;
+            const { x, y } = getCanvasPercent(ev.clientX - dragOffsetX, ev.clientY - dragOffsetY, el);
+            el.style.left = x + '%';
+            el.style.top = y + '%';
+        });
+
+        el.addEventListener('pointerup', ev => {
+            if (draggingEl !== el) return;
+            el.releasePointerCapture(ev.pointerId);
+            el.classList.remove('is-dragging');
+            draggingEl = null;
+
+            const rect = canvas.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            const cx = elRect.left + elRect.width / 2 - rect.left;
+            const cy = elRect.top + elRect.height / 2 - rect.top;
+            const xPct = Math.max(0, Math.min(100, (cx / rect.width) * 100));
+            const yPct = Math.max(0, Math.min(100, (cy / rect.height) * 100));
+            el.style.left = xPct + '%';
+            el.style.top = yPct + '%';
+
+            fetch('@Url.Action("UpdateTablePosition", "Owner")/' + el.dataset.tableId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x: xPct, y: yPct })
+            });
+        });
+
+        el.addEventListener('pointercancel', () => {
+            el.classList.remove('is-dragging');
+            draggingEl = null;
+        });
+    });
+
+    applyBlockBtn.addEventListener('click', async () => {
+        if (!activeId) return;
+        let block = blockSelect.value;
+        if (block === '__new__') {
+            block = newBlockInput.value.trim();
+            if (!block) { newBlockInput.focus(); return; }
+        }
+        const resp = await fetch('@Url.Action("UpdateTableBlock", "Owner")/' + activeId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ block })
+        });
+        if (resp.ok) {
+            location.reload();
+        }
+    });
+})();
+</script>
+}
