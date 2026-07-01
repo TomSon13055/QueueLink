@@ -36,6 +36,7 @@ public class Reservation
     /// <summary>
     /// Giờ hết hạn giữ bàn — computed: ReservationTime.AddMinutes(HoldMinutes)
     /// </summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public DateTime ExpiresAt => ReservationTime.AddMinutes(HoldMinutes);
 
     /// <summary>

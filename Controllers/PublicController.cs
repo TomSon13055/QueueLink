@@ -111,7 +111,7 @@ public class PublicController : Controller
             .Where(r => r.VenueId == venue.Id
                 && r.ReservationTime.Date == today
                 && r.Status == ReservationStatus.Confirmed
-                && r.ExpiresAt >= now)
+                && r.ReservationTime.AddMinutes(r.HoldMinutes) >= now)
             .ToListAsync();
 
         bool hasAvailable = tables.Any(t => t.Status == TableStatus.Available);
