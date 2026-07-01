@@ -206,9 +206,28 @@ public static class SeedData
             .Select(v => new { v.Id, v.Slug })
             .ToListAsync();
 
-        if (rows.Count == 0) return;
+        // Some owners pasted Google Image redirect URLs into the
+        // VenueSettings form (those URLs render HTML, not an image,
+        // so the <img onerror> path always fires and the venue ends
+        // up showing the fallback icon). Detect that pattern and
+        // overwrite with a known-good Unsplash URL per slug.
+        var brokenRows = await db.Venues
+            .Where(v => (v.LogoUrl != null && v.LogoUrl.Contains("google.com.vn"))
+                     || (v.LogoUrl != null && v.LogoUrl.Contains("google.com/imgres"))
+                     || (v.CoverImageUrl != null && v.CoverImageUrl.Contains("google.com.vn"))
+                     || (v.CoverImageUrl != null && v.CoverImageUrl.Contains("google.com/imgres")))
+            .Select(v => new { v.Id, v.Slug })
+            .ToListAsync();
 
-        foreach (var row in rows)
+        var allRows = rows
+            .Concat(brokenRows)
+            .GroupBy(r => r.Id)
+            .Select(g => g.First())
+            .ToList();
+
+        if (allRows.Count == 0) return;
+
+        foreach (var row in allRows)
         {
             var (logo, cover) = GetDefaultImagesForSlug(row.Slug);
             // Raw SQL keeps this idempotent and avoids dragging the
@@ -217,8 +236,8 @@ public static class SeedData
 #pragma warning disable EF1002
             await db.Database.ExecuteSqlRawAsync(
                 $@"UPDATE ""Venues""
-                   SET ""LogoUrl""      = COALESCE(""LogoUrl"", '{logo}'),
-                       ""CoverImageUrl"" = COALESCE(""CoverImageUrl"", '{cover}')
+                   SET ""LogoUrl""      = '{logo}',
+                       ""CoverImageUrl"" = '{cover}'
                    WHERE ""Id"" = {row.Id};");
 #pragma warning restore EF1002
         }
@@ -237,11 +256,14 @@ public static class SeedData
                 "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop",
                 "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop"),
             "photobooth-mall" => (
-                "https://images.unsplash.com/photo-1527526029430-319f10814151?w=200&h=200&fit=crop",
-                "https://images.unsplash.com/photo-1527526029430-319f10814151?w=1200&h=600&fit=crop"),
+                // Verified-working Unsplash IDs (each one returns HTTP 200).
+                // Photobooth category: cameras, props, party decorations.
+                "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&h=600&fit=crop"),
             "safari-foodcourt" => (
-                "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=200&h=200&fit=crop",
-                "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=1200&h=600&fit=crop"),
+                // Food court / casual dining imagery.
+                "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=600&fit=crop"),
             _ => (
                 "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop",
                 "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop"),

@@ -109,18 +109,31 @@ public class QueueController : Controller
     public async Task<IActionResult> Index()
     {
         var today = DateTime.UtcNow.Date;
+
+        // Pull venues with everything the card needs in one round trip.
+        // Eager-load Tables so the per-venue counts run in-memory on a
+        // tiny list (we already filtered by IsActive on both sides),
+        // avoiding a correlated subquery that Npgsql struggles to
+        // translate cleanly.
+        var activeVenueIds = await _db.QueueServices
+            .Where(q => q.IsActive && q.Venue!.IsActive)
+            .Select(q => q.VenueId)
+            .Distinct()
+            .ToListAsync();
+
+        var venues = await _db.Venues
+            .Where(v => activeVenueIds.Contains(v.Id))
+            .Include(v => v.Tables)
+            .ToListAsync();
+
+        var venueById = venues.ToDictionary(v => v.Id);
+
         var queues = await _db.QueueServices
-            .Include(q => q.Venue)
             .Where(q => q.IsActive && q.Venue!.IsActive)
             .Select(q => new
             {
                 q.Id,
                 q.VenueId,
-                VenueName = q.Venue!.Name,
-                VenueSlug = q.Venue!.Slug,
-                VenueLogoUrl = q.Venue!.LogoUrl,
-                VenueCoverImageUrl = q.Venue!.CoverImageUrl,
-                VenueAddress = q.Venue!.Address,
                 q.Name,
                 q.Description,
                 q.QueueStatus,
@@ -137,22 +150,31 @@ public class QueueController : Controller
             })
             .ToListAsync();
 
-        var result = queues.Select(q => new QueueCardViewModel
+        var result = queues.Select(q =>
         {
-            QueueServiceId = q.Id,
-            VenueId = q.VenueId,
-            VenueName = q.VenueName,
-            VenueSlug = q.VenueSlug,
-            VenueLogoUrl = q.VenueLogoUrl,
-            VenueCoverImageUrl = q.VenueCoverImageUrl,
-            VenueAddress = q.VenueAddress,
-            QueueServiceName = q.Name,
-            Description = q.Description,
-            QueueStatus = q.QueueStatus,
-            WaitingCount = q.WaitingCount,
-            EstimatedWaitMinutes = q.EstimatedWaitMinutes.Count > 0
-                ? (int)q.EstimatedWaitMinutes.Average()
-                : 0
+            var venue = venueById[q.VenueId];
+            var activeTables = venue.Tables.Where(t => t.IsActive).ToList();
+            var available = activeTables.Count(t => t.Status == TableStatus.Available);
+
+            return new QueueCardViewModel
+            {
+                QueueServiceId = q.Id,
+                VenueId = q.VenueId,
+                VenueName = venue.Name,
+                VenueSlug = venue.Slug ?? "",
+                VenueLogoUrl = venue.LogoUrl,
+                VenueCoverImageUrl = venue.CoverImageUrl,
+                VenueAddress = venue.Address,
+                AvailableTableCount = available,
+                TotalTableCount = activeTables.Count,
+                QueueServiceName = q.Name,
+                Description = q.Description,
+                QueueStatus = q.QueueStatus,
+                WaitingCount = q.WaitingCount,
+                EstimatedWaitMinutes = q.EstimatedWaitMinutes.Count > 0
+                    ? (int)q.EstimatedWaitMinutes.Average()
+                    : 0
+            };
         }).ToList();
 
         return View(result);

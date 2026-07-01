@@ -10,7 +10,9 @@ public class QueueCardViewModel
     public string? VenueSlug { get; set; }
     public string? VenueLogoUrl { get; set; }
     public string? VenueCoverImageUrl { get; set; }
-    public string? VenueAddress { get; set; }
+    public string VenueAddress { get; set; } = string.Empty;
+    public int AvailableTableCount { get; set; }
+    public int TotalTableCount { get; set; }
     public string QueueServiceName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public QueueStatus QueueStatus { get; set; }

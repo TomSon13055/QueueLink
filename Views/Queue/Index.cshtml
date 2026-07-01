@@ -49,57 +49,98 @@
                      data-name="@item.QueueServiceName.ToLower()"
                      data-venue="@item.VenueName.ToLower()">
                     <div class="card h-100 shadow-sm queue-card @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "" : "border-secondary")">
-                        @* ── VENUE LOGO HEADER ── *@
-                        <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="venue-logo flex-shrink-0">
-                                    @if (!string.IsNullOrEmpty(item.VenueLogoUrl))
-                                    {
-                                        <img src="@item.VenueLogoUrl" alt="@item.VenueName"
-                                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-                                        <div class="venue-logo-fallback" style="display:none;">
-                                            <i class="bi bi-shop"></i>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="venue-logo-fallback">
-                                            <i class="bi bi-shop"></i>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="flex-grow-1 min-width-0">
-                                    <a asp-controller="Public" asp-action="Index" asp-route-slug="@item.VenueSlug"
-                                       class="text-decoration-none text-muted">
-                                        <div class="small text-truncate venue-name-link" title="@item.VenueAddress">
-                                            <i class="bi bi-geo-alt me-1"></i>@item.VenueName
-                                        </div>
-                                    </a>
-                                </div>
-                                <span class="badge @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "bg-success" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "bg-warning text-dark" : "bg-secondary") flex-shrink-0">
-                                    @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "Mở" : item.QueueStatus == QueueLink.Models.QueueStatus.Paused ? "Tạm dừng" : "Đóng")
-                                </span>
-                            </div>
-                        </div>
-                        <div class="card-body d-flex flex-column pt-3">
-                            <h5 class="card-title fw-bold mb-1">@item.QueueServiceName</h5>
-                            <p class="card-text text-muted small mb-3">@(item.Description ?? "Không có mô tả")</p>
 
-                            <div class="mt-auto">
+                        @* ── COVER BANNER ── *@
+                        <div class="queue-card-cover">
+                            @if (!string.IsNullOrEmpty(item.VenueCoverImageUrl))
+                            {
+                                <img src="@item.VenueCoverImageUrl" alt="@item.VenueName"
+                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                <div class="queue-card-cover-fallback" style="display:none;">
+                                    <i class="bi bi-shop"></i>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="queue-card-cover-fallback">
+                                    <i class="bi bi-shop"></i>
+                                </div>
+                            }
+
+                            @* Status pill overlay (top-right) *@
+                            <div class="queue-card-pill">
                                 @if (item.QueueStatus == QueueLink.Models.QueueStatus.Open)
                                 {
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="badge bg-primary rounded-pill">
-                                            <i class="bi bi-people me-1"></i>@item.WaitingCount đang chờ
-                                        </span>
-                                        @if (item.WaitingCount > 0)
-                                        {
-                                            <span class="small text-muted">
-                                                <i class="bi bi-clock me-1"></i>~@item.EstimatedWaitMinutes phút
-                                            </span>
-                                        }
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Mở</span>
+                                }
+                                else if (item.QueueStatus == QueueLink.Models.QueueStatus.Paused)
+                                {
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-pause-circle me-1"></i>Tạm dừng</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Đóng</span>
+                                }
+                            </div>
+                        </div>
+
+                        @* ── WHITE BODY OVERLAY (logo + name + meta) ── *@
+                        <div class="card-body d-flex pt-0">
+                            @* Logo sits on the white body, overlapping the cover edge. *@
+                            <div class="queue-card-logo flex-shrink-0">
+                                @if (!string.IsNullOrEmpty(item.VenueLogoUrl))
+                                {
+                                    <img src="@item.VenueLogoUrl" alt="@item.VenueName"
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                    <div class="venue-logo-fallback" style="display:none;">
+                                        <i class="bi bi-shop"></i>
                                     </div>
-                                    <a asp-controller="Queue" asp-action="Join" asp-route-id="@item.QueueServiceId" class="btn btn-primary w-100">
+                                }
+                                else
+                                {
+                                    <div class="venue-logo-fallback">
+                                        <i class="bi bi-shop"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="flex-grow-1 min-width-0 ms-3 pt-3">
+                                <h6 class="fw-bold mb-0 text-truncate" title="@item.VenueName">
+                                    @item.VenueName
+                                </h6>
+                                <div class="small text-muted text-truncate" title="@item.VenueAddress">
+                                    <i class="bi bi-geo-alt me-1"></i>@item.VenueAddress
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body pt-0 pb-3">
+                            <div class="ps-5">@* indent under the logo column *@
+                                <h5 class="card-title fw-bold mb-1">@item.QueueServiceName</h5>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <p class="card-text text-muted small mb-3">@item.Description</p>
+                                }
+
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <span class="badge bg-primary rounded-pill">
+                                        <i class="bi bi-people me-1"></i>@item.WaitingCount đang chờ
+                                    </span>
+                                    @if (item.WaitingCount > 0)
+                                    {
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-clock me-1"></i>~@item.EstimatedWaitMinutes phút
+                                        </span>
+                                    }
+                                    <span class="badge @(item.AvailableTableCount > 0 ? "bg-success" : "bg-danger") rounded-pill">
+                                        <i class="bi bi-table me-1"></i>@item.AvailableTableCount/@item.TotalTableCount bàn trống
+                                    </span>
+                                </div>
+
+                                @if (item.QueueStatus == QueueLink.Models.QueueStatus.Open)
+                                {
+                                    <a asp-controller="Queue" asp-action="Join" asp-route-id="@item.QueueServiceId"
+                                       class="btn btn-primary w-100">
                                         <i class="bi bi-ticket-perforated me-2"></i>Lấy số
                                     </a>
                                 }
@@ -109,6 +150,11 @@
                                         <i class="bi bi-x-circle me-2"></i>Không khả dụng
                                     </button>
                                 }
+
+                                <a asp-controller="Public" asp-action="Index" asp-route-slug="@item.VenueSlug"
+                                   class="btn btn-link btn-sm w-100 mt-2 text-decoration-none">
+                                    <i class="bi bi-info-circle me-1"></i>Xem chi tiết quán
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -119,7 +165,7 @@
         <div id="noResults" class="text-center py-5" style="display:none;">
             <i class="bi bi-search text-muted fs-1 d-block mb-3"></i>
             <h5 class="text-muted">Không tìm thấy hàng chờ phù hợp</h5>
-            <p class="text-muted small">Thử từ khóa khác hoặc <a asp-controller="Queue" asp-action="Scan">quét QR</a></p>
+            <p class="text-muted small">Thử từ khoá khác hoặc <a asp-controller="Queue" asp-action="Scan">quét QR</a></p>
         </div>
     }
 </div>
@@ -130,7 +176,6 @@
             var input = document.getElementById("searchInput");
             var items = document.querySelectorAll(".queue-item");
             var noResults = document.getElementById("noResults");
-            var totalItems = items.length;
 
             input.addEventListener("input", function () {
                 var query = this.value.toLowerCase().trim();
@@ -154,7 +199,6 @@
                 }
             });
 
-            // Also filter on page load if query param exists
             var urlParams = new URLSearchParams(window.location.search);
             var q = urlParams.get("q");
             if (q) {

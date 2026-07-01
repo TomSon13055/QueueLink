@@ -27,7 +27,6 @@
                     @if (SignInManager.IsSignedIn(User))
                     {
                         <li class="nav-item"><a class="nav-link" asp-controller="Queue" asp-action="Index"><i class="bi bi-search me-1"></i>Tìm hàng chờ</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Public" asp-action="Browse"><i class="bi bi-shop me-1"></i>Khám phá quán</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Queue" asp-action="Scan"><i class="bi bi-qr-code-scan me-1"></i>Quét QR</a></li>
                         @if (User.IsInRole("Admin"))
                         {
@@ -51,7 +50,6 @@
                     else
                     {
                         <li class="nav-item"><a class="nav-link" asp-controller="Queue" asp-action="Index"><i class="bi bi-search me-1"></i>Tìm hàng chờ</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Public" asp-action="Browse"><i class="bi bi-shop me-1"></i>Khám phá quán</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Queue" asp-action="Scan"><i class="bi bi-qr-code-scan me-1"></i>Quét QR</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="About"><i class="bi bi-info-circle me-1"></i>Giới thiệu</a></li>
                         <li class="nav-item d-lg-none"><a class="nav-link" asp-controller="Account" asp-action="Register"><i class="bi bi-person-plus me-1"></i>Đăng ký</a></li>
