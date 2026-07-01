@@ -213,33 +213,50 @@ public static class SeedData
     /// </summary>
     private static async Task BackfillTableLayoutsAsync(ApplicationDbContext db)
     {
-        var venuesWithTables = await db.Tables
-            .Where(t => t.IsActive)
-            .GroupBy(t => t.VenueId)
-            .Select(g => new { VenueId = g.Key, Count = g.Count() })
-            .ToListAsync();
-
-        foreach (var v in venuesWithTables)
+        // Defensive: this method was introduced after the AddTableLayout
+        // migration. On Railway the migration may not have been applied
+        // yet (SeedData runs before ef-database-update in the deploy
+        // pipeline). If the column doesn't exist yet, catch the
+        // Postgres 42703 and silently skip — the next deploy after
+        // the migration runs will spread them out.
+        try
         {
-            // Per-venue: 4 tables per row, grid spacing 18% width / 16% height.
-            var tables = await db.Tables
-                .Where(t => t.VenueId == v.VenueId && t.IsActive)
-                .OrderBy(t => t.Block ?? "")
-                .ThenBy(t => t.SortOrder)
+            // Only spread tables that are all stacked at the default
+            // position (LayoutX=LayoutY=50). If the owner already
+            // opened the editor and moved things, respect that layout.
+            var needsSpread = await db.Tables
+                .Where(t => t.IsActive && t.LayoutX == 50m && t.LayoutY == 50m)
+                .GroupBy(t => t.VenueId)
+                .Select(g => new { VenueId = g.Key, Count = g.Count() })
                 .ToListAsync();
 
-            for (int i = 0; i < tables.Count; i++)
+            foreach (var v in needsSpread)
             {
-                int col = i % 4;
-                int row = i / 4;
-                tables[i].LayoutX = 12 + col * 22m;
-                tables[i].LayoutY = 18 + row * 22m;
-                tables[i].LayoutW = 18m;
-                tables[i].LayoutH = 16m;
-            }
-        }
+                // Per-venue: 4 tables per row, grid spacing 18% wide, 16% tall.
+                var tables = await db.Tables
+                    .Where(t => t.VenueId == v.VenueId && t.IsActive)
+                    .OrderBy(t => t.SortOrder)
+                    .ToListAsync();
 
-        await db.SaveChangesAsync();
+                for (int i = 0; i < tables.Count; i++)
+                {
+                    int col = i % 4;
+                    int row = i / 4;
+                    tables[i].LayoutX = 12 + col * 22m;
+                    tables[i].LayoutY = 18 + row * 22m;
+                    tables[i].LayoutW = 18m;
+                    tables[i].LayoutH = 16m;
+                }
+            }
+
+            if (needsSpread.Count != 0)
+                await db.SaveChangesAsync();
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "42703") // column does not exist
+        {
+            // Migration AddTableLayout hasn't been applied yet.
+            // The layout will be populated once the migration runs.
+        }
     }
 
     private static async Task BackfillVenueImagesAsync(ApplicationDbContext db)
