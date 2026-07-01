@@ -197,3 +197,65 @@ main {
     color: white;
     font-size: 4rem;
 }
+
+/* ── Browse page: smaller cover, overlapping logo, hover lift ── */
+.venue-browse-cover {
+    position: relative;
+    height: 140px;
+    overflow: hidden;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.venue-browse-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.venue-browse-pill {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.venue-browse-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    background: #fff;
+    flex-shrink: 0;
+    margin-top: -32px; /* overlap cover */
+}
+
+.venue-browse-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.venue-browse-logo .venue-logo-fallback {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    font-size: 1.5rem;
+}
+
+.venue-card-link .venue-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.venue-card-link:hover .venue-card {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12) !important;
+}
+
+.venue-name-link:hover {
+    color: #0d6efd !important;
+    text-decoration: underline !important;
+}

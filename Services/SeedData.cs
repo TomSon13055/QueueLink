@@ -43,8 +43,19 @@ public static class SeedData
         if (staff != null) await userManager.AddToRoleAsync(staff, "Staff");
 
         // ── Venues ────────────────────────────────────────────────────
-        if (await db.Venues.AnyAsync()) return; // already seeded
+        if (await db.Venues.AnyAsync())
+        {
+            // Database already has venues (likely seeded on a previous deploy
+            // when LogoUrl / CoverImageUrl were not part of the model).
+            // Backfill any venue whose images are still null so the public
+            // detail page and queue cards stop showing the icon fallback.
+            await BackfillVenueImagesAsync(db);
+            return;
+        }
 
+        // Demo image set: 1 logo + 1 cover per venue, served from Unsplash
+        // CDN (no auth required). Real venues will replace these via
+        // /Owner/VenueSettings. Keep the public page usable out-of-the-box.
         var v1 = new Venue
         {
             Name = "Dookki Buffet Vincom",
@@ -52,8 +63,8 @@ public static class SeedData
             Address = "Vincom Center, Quận 1, TP.HCM",
             Phone = "0900000001",
             Slug = "dookki-vincom",
-            LogoUrl = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&h=200&fit=crop",
-            CoverImageUrl = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=400&fit=crop",
+            LogoUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop",
+            CoverImageUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop",
             OwnerId = admin?.Id,
             OpenTime = new TimeOnly(11, 0),
             CloseTime = new TimeOnly(22, 0),
@@ -67,8 +78,8 @@ public static class SeedData
             Address = "Shopping Mall Floor 2, Quận 7, TP.HCM",
             Phone = "0900000002",
             Slug = "photobooth-mall",
-            LogoUrl = "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=200&h=200&fit=crop",
-            CoverImageUrl = "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=1200&h=400&fit=crop",
+            LogoUrl = "https://images.unsplash.com/photo-1527526029430-319f10814151?w=200&h=200&fit=crop",
+            CoverImageUrl = "https://images.unsplash.com/photo-1527526029430-319f10814151?w=1200&h=600&fit=crop",
             OwnerId = admin?.Id,
             OpenTime = new TimeOnly(9, 0),
             CloseTime = new TimeOnly(21, 0),
@@ -82,8 +93,8 @@ public static class SeedData
             Address = "Safari Park, Quận 9, TP.HCM",
             Phone = "0900000003",
             Slug = "safari-foodcourt",
-            LogoUrl = "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=200&h=200&fit=crop",
-            CoverImageUrl = "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=1200&h=400&fit=crop",
+            LogoUrl = "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=200&h=200&fit=crop",
+            CoverImageUrl = "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=1200&h=600&fit=crop",
             OwnerId = admin?.Id,
             OpenTime = new TimeOnly(10, 0),
             CloseTime = new TimeOnly(20, 0),
@@ -179,6 +190,62 @@ public static class SeedData
         );
 
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Older DBs (seeded before LogoUrl / CoverImageUrl were part of the
+    /// Venue model) leave every venue with both columns null, so the
+    /// public detail page and queue cards fall through to the icon
+    /// fallback. Patch any such rows in place so the UI looks correct
+    /// on the very next request after a deploy.
+    /// </summary>
+    private static async Task BackfillVenueImagesAsync(ApplicationDbContext db)
+    {
+        var rows = await db.Venues
+            .Where(v => v.LogoUrl == null || v.CoverImageUrl == null)
+            .Select(v => new { v.Id, v.Slug })
+            .ToListAsync();
+
+        if (rows.Count == 0) return;
+
+        foreach (var row in rows)
+        {
+            var (logo, cover) = GetDefaultImagesForSlug(row.Slug);
+            // Raw SQL keeps this idempotent and avoids dragging the
+            // full Venue entity through change tracking. Slug and Id
+            // are values we just read, never user input.
+#pragma warning disable EF1002
+            await db.Database.ExecuteSqlRawAsync(
+                $@"UPDATE ""Venues""
+                   SET ""LogoUrl""      = COALESCE(""LogoUrl"", '{logo}'),
+                       ""CoverImageUrl"" = COALESCE(""CoverImageUrl"", '{cover}')
+                   WHERE ""Id"" = {row.Id};");
+#pragma warning restore EF1002
+        }
+    }
+
+    /// <summary>
+    /// Per-venue default images. If a slug isn't recognised (e.g. the
+    /// owner created the venue manually), fall back to the Dookki set
+    /// so something reasonable still shows.
+    /// </summary>
+    private static (string logo, string cover) GetDefaultImagesForSlug(string? slug)
+    {
+        return slug switch
+        {
+            "dookki-vincom" => (
+                "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop"),
+            "photobooth-mall" => (
+                "https://images.unsplash.com/photo-1527526029430-319f10814151?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1527526029430-319f10814151?w=1200&h=600&fit=crop"),
+            "safari-foodcourt" => (
+                "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=1200&h=600&fit=crop"),
+            _ => (
+                "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop",
+                "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop"),
+        };
     }
 
     /// <summary>
