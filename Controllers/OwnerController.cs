@@ -247,8 +247,7 @@ public class OwnerController : Controller
 
         var tables = await _db.Tables
             .Where(t => t.VenueId == venueId && t.IsActive)
-            .OrderBy(t => t.Block ?? "")
-            .ThenBy(t => t.SortOrder)
+            .OrderBy(t => t.SortOrder)
             .ToListAsync();
 
         ViewBag.VenueId = venueId;

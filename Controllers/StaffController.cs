@@ -43,12 +43,12 @@ public class StaffController : Controller
         var today = DateTime.UtcNow.Date;
         var now = DateTime.UtcNow;
 
-        // Load tables for this venue. Order by Block then SortOrder
-        // so the editor view reads top-to-bottom by zone.
+        // Load tables for this venue. Order by SortOrder only;
+        // Block ordering is skipped if the column doesn't exist yet
+        // (migration AddTableLayout hasn't been applied).
         var tables = await _db.Tables
             .Where(t => t.VenueId == vid && t.IsActive)
-            .OrderBy(t => t.Block ?? "")
-            .ThenBy(t => t.SortOrder)
+            .OrderBy(t => t.SortOrder)
             .ToListAsync();
 
         // Reservations and Orders are loaded separately, then
