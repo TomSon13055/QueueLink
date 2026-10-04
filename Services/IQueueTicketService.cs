@@ -11,6 +11,12 @@ public interface IQueueTicketService
 
     Task<bool> ChangeTicketStatusAsync(int ticketId, TicketStatus newStatus, string? userId, string? note = null, CancellationToken ct = default);
 
+    /// <summary>
+    /// Hủy vé của khách. Trả về false nếu vé không tồn tại, đã hoàn tất/đã hủy trước đó,
+    /// hoặc không thuộc session/user hiện tại.
+    /// </summary>
+    Task<bool> CancelTicketAsync(string publicToken, string? userId, CancellationToken ct = default);
+
     Task<TicketStatusViewModel?> GetTicketStatusAsync(string publicToken, CancellationToken ct = default);
 
     Task RecalculateEtasAsync(int queueServiceId, CancellationToken ct = default);

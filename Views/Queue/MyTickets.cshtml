@@ -1,0 +1,101 @@
+@model IEnumerable<QueueLink.Models.QueueTicket>
+@{
+    ViewData["Title"] = "Vé của tôi";
+    Layout = "_Layout";
+}
+
+<div class="container py-5">
+    <div class="mb-4">
+        <h2 class="fw-bold"><i class="bi bi-ticket-detailed text-primary me-2"></i>Vé của tôi</h2>
+        <p class="text-muted">Theo dõi trạng thái các số bạn đã lấy trong ngày và những ngày gần đây.</p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success"><i class="bi bi-check-circle me-1"></i>@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                <h5 class="fw-bold">Chưa có vé nào</h5>
+                <p class="text-muted">Bạn chưa từng lấy số trong hệ thống QueueLink.</p>
+                <a asp-controller="Queue" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i>Tìm hàng chờ ngay
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var t in Model)
+            {
+                var statusBadge = t.Status switch
+                {
+                    QueueLink.Models.TicketStatus.Waiting => "bg-primary",
+                    QueueLink.Models.TicketStatus.Called => "bg-warning text-dark",
+                    QueueLink.Models.TicketStatus.Serving => "bg-info",
+                    QueueLink.Models.TicketStatus.Completed => "bg-success",
+                    QueueLink.Models.TicketStatus.NoShow => "bg-secondary",
+                    QueueLink.Models.TicketStatus.Cancelled => "bg-danger",
+                    _ => "bg-secondary"
+                };
+                var statusText = t.Status switch
+                {
+                    QueueLink.Models.TicketStatus.Waiting => "Đang chờ",
+                    QueueLink.Models.TicketStatus.Called => "Đang gọi",
+                    QueueLink.Models.TicketStatus.Serving => "Đang phục vụ",
+                    QueueLink.Models.TicketStatus.Completed => "Hoàn tất",
+                    QueueLink.Models.TicketStatus.NoShow => "Vắng mặt",
+                    QueueLink.Models.TicketStatus.Cancelled => "Đã hủy",
+                    _ => t.Status.ToString()
+                };
+                var canCancel = t.Status == QueueLink.Models.TicketStatus.Waiting
+                    || t.Status == QueueLink.Models.TicketStatus.Called;
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="display-6 fw-bold text-primary">@t.TicketCode</span>
+                                <span class="badge @statusBadge">@statusText</span>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-shop me-1"></i>@t.QueueService?.Venue?.Name
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <i class="bi bi-list-ol me-1"></i>@t.QueueService?.Name
+                                &middot;
+                                <i class="bi bi-calendar-event me-1"></i>@t.TicketDate.ToString("dd/MM/yyyy")
+                                &middot;
+                                <i class="bi bi-clock me-1"></i>@t.CreatedAt.ToString("HH:mm")
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a asp-controller="Queue" asp-action="Status" asp-route-token="@t.PublicToken"
+                                   class="btn btn-outline-primary btn-sm flex-grow-1">
+                                    <i class="bi bi-eye me-1"></i>Xem trạng thái
+                                </a>
+                                @if (canCancel)
+                                {
+                                    <form asp-controller="Queue" asp-action="Cancel" asp-route-token="@t.PublicToken"
+                                          method="post" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn hủy số này?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-x-lg me-1"></i>Hủy
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

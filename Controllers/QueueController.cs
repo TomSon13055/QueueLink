@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QueueLink.Data;
@@ -129,7 +130,7 @@ public class QueueController : Controller
         var venueById = venues.ToDictionary(v => v.Id);
 
         var queues = await _db.QueueServices
-            .Where(q => q.IsActive && q.Venue!.IsActive)
+            .Where(q => q.IsActive && q.QueueStatus == QueueStatus.Open && q.Venue!.IsActive)
             .Select(q => new
             {
                 q.Id,
@@ -288,11 +289,66 @@ public class QueueController : Controller
         return Json(vm);
     }
 
+    // GET: /Queue/MyTickets — list tickets for the logged-in user (or current session guest).
+    [Authorize]
+    public async Task<IActionResult> MyTickets()
+    {
+        var userId = (await _userManager.GetUserAsync(User))?.Id;
+        if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login", "Account");
+
+        var tickets = await _db.QueueTickets
+            .Where(t => t.UserId == userId)
+            .Include(t => t.QueueService!).ThenInclude(q => q.Venue)
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        return View(tickets);
+    }
+
     // GET: /Queue/GetQueueSummary/{id}
     public async Task<IActionResult> GetQueueSummary(int id)
     {
         var summary = await _ticketService.GetQueueSummaryAsync(id);
         if (summary == null) return NotFound();
         return Json(summary);
+    }
+
+    // POST: /Queue/Cancel/{token}
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return NotFound();
+
+        var ticket = await _db.QueueTickets.FirstOrDefaultAsync(t => t.PublicToken == token);
+        if (ticket == null) return NotFound("Không tìm thấy số.");
+
+        // Guard: chỉ chủ sở hữu (đăng nhập) hoặc khách vãng lai cùng session mới được hủy.
+        var session = _guestSession.Get();
+        var sessionUserId = session?.UserId;
+        var isOwner = User.Identity?.IsAuthenticated == true
+            ? (await _userManager.GetUserAsync(User))?.Id == ticket.UserId
+            : (sessionUserId == ticket.UserId) || string.IsNullOrEmpty(ticket.UserId);
+
+        if (!isOwner)
+        {
+            TempData["Error"] = "Bạn không có quyền hủy vé này.";
+            return RedirectToAction(nameof(Status), new { token });
+        }
+
+        var userIdForLog = User.Identity?.IsAuthenticated == true
+            ? (await _userManager.GetUserAsync(User))?.Id
+            : null;
+
+        var ok = await _ticketService.CancelTicketAsync(token, userIdForLog);
+        if (!ok)
+        {
+            TempData["Error"] = "Không thể hủy vé. Vui lòng kiểm tra trạng thái hiện tại.";
+            return RedirectToAction(nameof(Status), new { token });
+        }
+
+        TempData["Success"] = "Đã hủy số của bạn.";
+        return RedirectToAction(nameof(Status), new { token });
     }
 }

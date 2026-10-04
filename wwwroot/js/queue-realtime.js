@@ -1,6 +1,8 @@
 /// <reference path="~/lib/jquery/dist/jquery.min.js" />
 
 (function () {
+    "use strict";
+
     if (!window.queueLinkConfig) return;
 
     var cfg = window.queueLinkConfig;
@@ -8,66 +10,138 @@
     var isStaff = cfg.isStaff;
     var queueServiceId = cfg.queueServiceId;
     var publicToken = cfg.publicToken;
+    var notifyWhenAheadAtMost = typeof cfg.notifyWhenAheadAtMost === "number"
+        ? cfg.notifyWhenAheadAtMost
+        : 3;
 
-    // Connect to SignalR hub.
+    // ── State ──────────────────────────────────────────────────────
+    var lastStatus = null;
+    var lastPeopleAhead = null;
+    var approachingNotified = false;
+
+    // ── SignalR connection ─────────────────────────────────────────
     var connection = new signalR.HubConnectionBuilder()
         .withUrl("/queueHub")
         .withAutomaticReconnect()
         .build();
 
-    // ── Customer: join ticket group ──────────────────────────────
     if (isCustomer && publicToken) {
-        connection.start().then(function () {
-            connection.invoke("JoinTicketGroup", publicToken);
-        }).catch(function (err) {
-            console.warn("SignalR connect failed:", err);
-        });
+        connection.start()
+            .then(function () { return connection.invoke("JoinTicketGroup", publicToken); })
+            .catch(function (err) { console.warn("SignalR connect failed:", err); });
     }
 
-    // ── Staff: join queue group ────────────────────────────────
     if (isStaff && queueServiceId) {
-        connection.start().then(function () {
-            connection.invoke("JoinQueueGroup", queueServiceId);
-        }).catch(function (err) {
-            console.warn("SignalR connect failed:", err);
-        });
+        connection.start()
+            .then(function () { return connection.invoke("JoinQueueGroup", queueServiceId); })
+            .catch(function (err) { console.warn("SignalR connect failed:", err); });
     }
 
-    // ── TicketUpdated event ───────────────────────────────────
+    // ── Events ─────────────────────────────────────────────────────
     connection.on("TicketUpdated", function (data) {
-        // For customers: reload page to reflect new status.
         if (isCustomer && data.publicToken === publicToken) {
-            location.reload();
-            return;
+            applyTicketUpdate(data);
         }
-
-        // For staff dashboard: reload to show new data.
         if (isStaff && data.queueServiceId === queueServiceId) {
             location.reload();
         }
     });
 
-    // ── QueueUpdated event ────────────────────────────────────
     connection.on("QueueUpdated", function (data) {
         if (isStaff && data.queueServiceId === queueServiceId) {
             location.reload();
         }
+        if (isCustomer && data.queueServiceId === queueServiceId) {
+            refreshFromServer();
+        }
     });
 
-    // ── CurrentlyCallingChanged event ───────────────────────────
     connection.on("CurrentlyCallingChanged", function (data) {
         if (isCustomer && data.queueServiceId === queueServiceId) {
-            // Show a toast/alert without full reload for the customer.
-            showToast("Đang gọi số: " + data.ticketCode, "warning");
+            if (data.publicToken === publicToken) {
+                // Đến lượt mình rồi — reload để hiển thị trạng thái Called.
+                location.reload();
+            } else {
+                showToast("Đang gọi số: " + data.ticketCode, "warning");
+            }
         }
-
         if (isStaff && data.queueServiceId === queueServiceId) {
             var el = document.getElementById("currentCall");
             if (el) el.textContent = data.ticketCode;
         }
     });
 
-    // ── Toast helper (no bootstrap dependency needed) ──────────
+    // ── DOM update (no full reload) ────────────────────────────────
+    function applyTicketUpdate(data) {
+        if (!data) return;
+        if (data.status && data.status !== lastStatus) {
+            // Trạng thái thay đổi → reload để render layout chuẩn (badge class, alert class, message).
+            location.reload();
+            return;
+        }
+        // Status không đổi nhưng ticket đã được "advance" → gọi server lấy số liệu mới.
+        refreshFromServer();
+    }
+
+    function refreshFromServer() {
+        if (!publicToken) return;
+        fetch("/Queue/GetTicketStatus?token=" + encodeURIComponent(publicToken))
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data) return;
+                updateStatusBadge(data.statusText);
+                updatePeopleAhead(data.peopleAhead);
+                updateEstimatedWait(data.estimatedWaitMinutes);
+                updateCurrentlyCalling(data.currentCallingTicketCode);
+                checkApproaching(data.peopleAhead);
+            })
+            .catch(function () { });
+    }
+
+    function updateStatusBadge(text) {
+        if (lastStatus === text) return;
+        lastStatus = text;
+        var el = document.getElementById("statusText");
+        if (el) el.textContent = text;
+    }
+
+    function updatePeopleAhead(value) {
+        if (lastPeopleAhead === value) return;
+        lastPeopleAhead = value;
+        var el = document.getElementById("peopleAhead");
+        if (el) el.textContent = value + " người";
+    }
+
+    function updateEstimatedWait(minutes) {
+        var el = document.getElementById("estimatedWait");
+        if (el) el.textContent = "~" + minutes + " phút";
+    }
+
+    function updateCurrentlyCalling(code) {
+        var el = document.getElementById("currentCallCode");
+        if (!el) return;
+        if (code) {
+            el.textContent = code;
+            el.closest(".alert")?.classList.remove("d-none");
+        } else {
+            el.closest(".alert")?.classList.add("d-none");
+        }
+    }
+
+    function checkApproaching(peopleAhead) {
+        if (peopleAhead == null) return;
+        if (peopleAhead > 0 && peopleAhead <= notifyWhenAheadAtMost && !approachingNotified) {
+            approachingNotified = true;
+            var msg = "Sắp đến lượt! Còn " + peopleAhead + " người trước bạn.";
+            showToast(msg, "warning");
+            showBrowserNotification("Sắp đến lượt", msg);
+        }
+        if (peopleAhead > notifyWhenAheadAtMost) {
+            approachingNotified = false;
+        }
+    }
+
+    // ── Toasts ─────────────────────────────────────────────────────
     function showToast(message, type) {
         var toast = document.createElement("div");
         toast.className = "position-fixed top-0 end-0 p-3";
@@ -81,24 +155,46 @@
             '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
             '</div></div>';
         document.body.appendChild(toast);
-        setTimeout(function () {
-            document.body.removeChild(toast);
-        }, 6000);
+        setTimeout(function () { toast.remove(); }, 6000);
     }
 
-    // ── Auto-refresh fallback (polling every 15s) ─────────────
+    // ── Browser Notification API ───────────────────────────────────
+    function showBrowserNotification(title, body) {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "granted") {
+            try { new Notification(title, { body: body }); } catch (_) { }
+        }
+    }
+
+    function requestBrowserNotificationPermission() {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "default") {
+            Notification.requestPermission().catch(function () { });
+        }
+    }
+
+    if (isCustomer) {
+        requestBrowserNotificationPermission();
+    }
+
+    // ── Polling fallback (chỉ chạy khi SignalR không connect được) ─
+    var signalRConnected = false;
+    connection.onreconnected(function () { signalRConnected = true; });
+    connection.onclose(function () { signalRConnected = false; });
+
     if (isCustomer && publicToken) {
+        // Snapshot lần đầu để polling không bắn toast trùng.
+        var currentStatusEl = document.getElementById("statusText");
+        if (currentStatusEl) lastStatus = currentStatusEl.textContent;
+        var currentAheadEl = document.getElementById("peopleAhead");
+        if (currentAheadEl) {
+            var m = currentAheadEl.textContent.match(/\d+/);
+            if (m) lastPeopleAhead = parseInt(m[0], 10);
+        }
+
         setInterval(function () {
-            fetch("/Queue/GetTicketStatus?token=" + encodeURIComponent(publicToken))
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    // Only reload if status changed.
-                    var currentStatus = document.getElementById("statusText");
-                    if (currentStatus && currentStatus.textContent !== data.statusText) {
-                        location.reload();
-                    }
-                })
-                .catch(function () { });
+            if (signalRConnected) return;
+            refreshFromServer();
         }, 15000);
     }
 })();

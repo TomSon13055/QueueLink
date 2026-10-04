@@ -48,7 +48,7 @@
                 <div class="col-md-6 col-lg-4 queue-item"
                      data-name="@item.QueueServiceName.ToLower()"
                      data-venue="@item.VenueName.ToLower()">
-                    <div class="card h-100 shadow-sm queue-card @(item.QueueStatus == QueueLink.Models.QueueStatus.Open ? "" : "border-secondary")">
+                    <div class="card h-100 shadow-sm queue-card">
 
                         @* ── COVER BANNER ── *@
                         <div class="queue-card-cover">
@@ -66,22 +66,6 @@
                                     <i class="bi bi-shop"></i>
                                 </div>
                             }
-
-                            @* Status pill overlay (top-right) *@
-                            <div class="queue-card-pill">
-                                @if (item.QueueStatus == QueueLink.Models.QueueStatus.Open)
-                                {
-                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Mở</span>
-                                }
-                                else if (item.QueueStatus == QueueLink.Models.QueueStatus.Paused)
-                                {
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-pause-circle me-1"></i>Tạm dừng</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Đóng</span>
-                                }
-                            </div>
                         </div>
 
                         @* ── WHITE BODY OVERLAY (logo + name + meta) ── *@
@@ -137,19 +121,10 @@
                                     </span>
                                 </div>
 
-                                @if (item.QueueStatus == QueueLink.Models.QueueStatus.Open)
-                                {
-                                    <a asp-controller="Queue" asp-action="Join" asp-route-id="@item.QueueServiceId"
-                                       class="btn btn-primary w-100">
-                                        <i class="bi bi-ticket-perforated me-2"></i>Lấy số
-                                    </a>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-secondary w-100" disabled>
-                                        <i class="bi bi-x-circle me-2"></i>Không khả dụng
-                                    </button>
-                                }
+                                <a asp-controller="Queue" asp-action="Join" asp-route-id="@item.QueueServiceId"
+                                   class="btn btn-primary w-100">
+                                    <i class="bi bi-ticket-perforated me-2"></i>Lấy số
+                                </a>
 
                                 <a asp-controller="Public" asp-action="Index" asp-route-slug="@item.VenueSlug"
                                    class="btn btn-link btn-sm w-100 mt-2 text-decoration-none">

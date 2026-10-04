@@ -240,6 +240,28 @@ public class QueueTicketService : IQueueTicketService
         return await GetPeopleAheadInternalAsync(ticketId, ct);
     }
 
+    public async Task<bool> CancelTicketAsync(string publicToken, string? userId, CancellationToken ct = default)
+    {
+        var ticket = await _db.QueueTickets
+            .FirstOrDefaultAsync(t => t.PublicToken == publicToken, ct);
+
+        if (ticket == null) return false;
+
+        // Chỉ chủ sở hữu vé (đã đăng nhập) mới được hủy. Khách vãng lai dùng controller-side guard.
+        if (!string.IsNullOrEmpty(userId) && ticket.UserId != userId) return false;
+
+        // Không thể hủy khi đã phục vụ / hoàn tất / đã hủy.
+        if (ticket.Status == TicketStatus.Serving ||
+            ticket.Status == TicketStatus.Completed ||
+            ticket.Status == TicketStatus.Cancelled ||
+            ticket.Status == TicketStatus.NoShow)
+        {
+            return false;
+        }
+
+        return await ChangeTicketStatusAsync(ticket.Id, TicketStatus.Cancelled, userId, "Cancelled by customer", ct);
+    }
+
     public async Task<QueueSummaryDto?> GetQueueSummaryAsync(int queueServiceId, CancellationToken ct = default)
     {
         var today = DateTime.UtcNow.Date;
